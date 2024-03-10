@@ -1,0 +1,44 @@
+//1
+(define zmen 10)
+(define (f1)
+  (set! zmen 20)
+  (+ 4 5)
+  )
+
+(define (f2) (f1) (+ 4 5))
+
+(f2)
+(+ zmen)
+
+//2
+
+(define (red a b f) (+ (f n 10) ((lambda (x) (+ x a)) 7) (b a 10)))
+(red 5 (lambda (a b) (+ a b)) (lambda (a b) (* a b)))
+
+(define (f a) (lambda (b) (+ a b)))
+(f 5)
+
+
+(define (f a) (lambda (b) (+ a b)))
+(define z (f 5))
+(z 3)
+(define (f a) (lambda (b) (+ a b)))
+(define z (f 5))
+(z 3)
+
+
+
+(define (fib2 n)
+(fib3 n 1 1)
+)
+
+(define (fib3 n a b) (if (<= n 2) a (fib3 (- n 1) (+ a b) a)))
+
+(fib2 6)
+
+
+(define (fib3 n a b) (if (<= n 2) a (fib3 (- n 1) (+ a b) a)))
+
+(define (fib2 n) (fib3 n 1 1))
+
+(fib2 7)
