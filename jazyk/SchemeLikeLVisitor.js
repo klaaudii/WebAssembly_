@@ -1,6 +1,7 @@
 // Generated from SchemeLikeL.g4 by ANTLR 4.13.1
 // jshint ignore: start
 import antlr4 from './antlr4/index.web.js';
+
 // This class defines a complete generic visitor for a parse tree produced by SchemeLikeLParser.
 
 export default class SchemeLikeLVisitor extends antlr4.tree.ParseTreeVisitor {
@@ -31,6 +32,12 @@ export default class SchemeLikeLVisitor extends antlr4.tree.ParseTreeVisitor {
 
 	// Visit a parse tree produced by SchemeLikeLParser#biExpr.
 	visitBiExpr(ctx) {
+	  return this.visitChildren(ctx);
+	}
+
+
+	// Visit a parse tree produced by SchemeLikeLParser#uniExpr.
+	visitUniExpr(ctx) {
 	  return this.visitChildren(ctx);
 	}
 
@@ -71,6 +78,12 @@ export default class SchemeLikeLVisitor extends antlr4.tree.ParseTreeVisitor {
 	}
 
 
+	// Visit a parse tree produced by SchemeLikeLParser#uniOperatorExpr.
+	visitUniOperatorExpr(ctx) {
+	  return this.visitChildren(ctx);
+	}
+
+
 	// Visit a parse tree produced by SchemeLikeLParser#localFncBodyExpr.
 	visitLocalFncBodyExpr(ctx) {
 	  return this.visitChildren(ctx);
@@ -95,14 +108,20 @@ export default class SchemeLikeLVisitor extends antlr4.tree.ParseTreeVisitor {
 	}
 
 
-	// Visit a parse tree produced by SchemeLikeLParser#loopExpr.
-	visitLoopExpr(ctx) {
+	// Visit a parse tree produced by SchemeLikeLParser#vectorExpr.
+	visitVectorExpr(ctx) {
 	  return this.visitChildren(ctx);
 	}
 
 
-	// Visit a parse tree produced by SchemeLikeLParser#vectorExpr.
-	visitVectorExpr(ctx) {
+	// Visit a parse tree produced by SchemeLikeLParser#listExpr.
+	visitListExpr(ctx) {
+	  return this.visitChildren(ctx);
+	}
+
+
+	// Visit a parse tree produced by SchemeLikeLParser#displayExpr.
+	visitDisplayExpr(ctx) {
 	  return this.visitChildren(ctx);
 	}
 

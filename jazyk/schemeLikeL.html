@@ -1,182 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <meta charset="UTF-8">
-<title>SchemeLikeL</title>
+<title>SchemeLike Editor</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="./ace/ace.js"></script>
+<script src="./ace/ext-language_tools.js"></script>
 
-<!--<script type="module" src="./main.js"></script>-->
-<!--    (define x 3)-->
-<!--    (define y x)-->
-<!--    (+ x y)-->
+<!--(fill-rect (create-canvas 512 512) 0 0 20 20 (color 225 0 225 225))-->
 
-
-
-<!--(define (sum3 a b c) (+ a c 20))-->
-
-<!--(sum3 50 0 0)-->
-
-
-
+<!--(define v (vector 1 2 3))-->
+<!--(define v2 (vector 4 5 6 ))-->
+<!--(define v3 (vector 4 5 6 7))-->
+<!--(define canvas (create-canvas 512 512))-->
+<!--(define canvas2 (create-canvas 512 512))-->
+<!--(fill-rect canvas 0 0 20 20 (color 0 0 0 255))-->
+<!--(fill-rect canvas 0 10 20 20 (color 255 0 0 255))-->
 
 
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #2d2d2d;
+        color: #f8f8f8;
+        display: flex;
+        height: 100vh;
+    }
 
-<!--(define x 400)-->
-<!--(define y (+ 200 300))-->
-<!--(define z (+ x y))-->
-<!--(define (sum3 a b c) (+ a b c z 1))-->
-<!--(define w (sum3 10 20 30))-->
+    #editor-container {
+        margin: 15px;
+        min-width: 10%;
+        width: 50%;
+        height: calc(100% - 30px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+        resize: horizontal;
+    }
 
+    #editor {
+        background-color: #272822;
+        overflow-y: auto;
+        resize: vertical;
+        min-height: 10%;
+        max-height: 100%;
+        width: 100%;
+        height: 500px;
+    }
 
-<!--(define x (+ 10 20))-->
-<!--(define y (+ 10  x (+ x)))-->
-<!--(define (sum2 a b) (+ a b))-->
-<!--(define z (+ 10 (sum2 10 20)))-->
+    #buttons {
+        margin: 10px;
+        display: flex;
+        justify-content: right;
+        background-color: #2d2d2d;
+    }
 
+    #output {
+        padding: 5px;
+        flex: 3;
+        background-color: #272822;
+        overflow-y: auto;
+        border: none;
+        color: #f8f8f8;
+        font-size: 14px;
+    }
 
+    #canvas-container {
+        margin: 15px;
+        height: calc(100% - 30px);
+    }
 
-<!--(define sum3-->
-<!--(lambda (a b c)-->
-<!--(+ a b c)))-->
-<!--(define (red a b f) (f a b))-->
-<!--( + (red 10 20 (lambda (a b) (+ a b))) (red 10 20 (lambda (a b) (* a b))) (red 10 20 (lambda (a b) (* a b))))-->
+    button {
+        margin-left: 10px;
+        padding: 8px 32px;
+        font-size: 16px;
+        background-color: #4CAF50;
+        color: #2d2d2d;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
 
-
-<!--LAMBDA-S-->
-<!--(define sum3-->
-<!--(lambda (a b c)-->
-<!--(+ a b c)))-->
-<!--(define (red a b f) (+ (f a 10) (b a 10)))-->
-<!--(red 5 (lambda (a b) (+ a b)) (lambda (a b) (* a b)))-->
-
-
-<!--RECURSION-->
-<!--(define (fib n)-->
-<!--(if (<= n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))-->
-
-
-
-<!--(define (fnc x y)(let ((a 10) (b 20))(+ a b x y)))-->
-<!---->
-
-
-
-<!--(define (factlet n) (let ((x 10))
-  (let loop((n1 n) (a x))
-    (if (= n1 0) a (loop (- n1 1) (+ a 1))))))
-
-(factlet 5)-->
-
-
-
-
-<!--(define (factlet2 n) (let ((x 10))-->
-<!--(let loop2((n1 n))-->
-<!--(if (!= n1 0) (loop2 (- n1 1))  (set! x (+ x 1))  ))  (+ x) ))-->
-
-<!--(factlet2 5)-->
-
-
-<!--(define (factlet2 n) (let ((x 10))-->
-<!--(let loop2((n1 n))-->
-<!--(if (!= n1 0) (begin (set! x (+ x 1))(loop2 (- n1 1)))   (+ x) ))   ))-->
-
-<!--(factlet2 5)-->
-
-
-
-<!--(let ((x 10))-->
-<!--(if (!= n 0)-->
-<!--(begin (let loop2((n1 n))-->
-<!--(if (!= n1 0) (begin (set! x (+ x 1))(loop2 (- n1 1)))   (+ x)) ))-->
-<!--(+ x))-->
-<!--))-->
-<!--(factlet2 5)-->
-
-
-
-<!--(define (f) (if (= 1 1) (and 4 5) 8))-->
-
-
-
-<!--(define n 470)-->
-<!--(define (f a) (+ a 1))-->
-<!--(define v (vector n 1 2 5))-->
-<!--(define v2 (vector 100 200 300))-->
-<!--(vector-set! v2 0 788)-->
-<!--(vector-ref v2 0)-->
+    button:hover {
+        background-color: #48914a
+    }
+</style>
 
 <body>
-<textarea id="userCode" rows="10" cols="50">(define n 1)
-(define (f a) (+ a 1))
-(define v (vector n 1 2 5))
-(vector-ref v 0)
-</textarea>
-<!--    TODO dories tie medzery-->
-<br>
-<button onclick="compile()">Compile to Wasm</button>
-<button onclick="run()">Run Wasm</button><br>
-<textarea id="output" rows="10" cols="50"></textarea>
+
+<div id="editor-container">
+    <div id="editor">(canvas 200 200)</div>
+    <div id="buttons">
+        <button id="compile-button" onclick="compile()">Compile</button>
+        <button id="run-button" onclick="run()">Run</button>
+    </div>
+    <textarea id="output"></textarea>
+</div>
+<div id="canvas-container">
+</div>
+
+
+
+
+
+<!--<textarea id="userCode" rows="10" cols="50">-->
+<!--(define (fib3 n a b) (if (<= n 2) a (fib3 (- n 1) (+ a b) a)))-->
+<!--(define (fib2 n) (fib3 n 1 1))-->
+<!--(fib2 7)-->
+
+<!--</textarea>-->
+<!--&lt;!&ndash;    TODO dories tie medzery&ndash;&gt;-->
+<!--<br>-->
+<!--<button onclick="compile()">Compile to Wasm</button>-->
+<!--<button onclick="run()">Run Wasm</button><br>-->
+<!--<textarea id="output" rows="10" cols="50">-->
+
+<!--</textarea>-->
+
+<!--<br>-->
+
+<!--<div id="editor"></div>-->
+
+
+
+
+
+
+
 
 <script type="module">
 
-    import {compileToWasm, runWasm} from './main.js';
+
+
+
+
+    import {compileToWasm, runWasm, initEditor} from './main.js';
     let wasmBinary;
     window.compile = compile
     window.run = run
 
+    initEditor()
+
     function compile(){
         wasmBinary = compileToWasm()
-        // console.log(wasmBinary)
     }
 
     async function run(){
         runWasm(wasmBinary)
-
     }
 
-
-
 </script>
-
-
-
-
-
-
-
-
-<!--        class MyVisitor extends SimpleLangVisitor {-->
-<!--        visitStart(ctx) {-->
-<!--        return this.visit(ctx.expr());-->
-<!--        }-->
-
-<!--        visitExpr(ctx) {-->
-<!--        if (ctx.INT()) {-->
-<!--        return { type: 'INT', value: parseInt(ctx.INT().getText()) };-->
-<!--} else if (ctx.getChildCount() === 1) {-->
-<!--return this.visit(ctx.expr(0));-->
-<!--} else {-->
-<!--const left = this.visit(ctx.expr(0));-->
-<!--const right = this.visit(ctx.expr(1));-->
-<!--const operator = ctx.getChild(1).getText();-->
-<!--return { type: operator, left, right };-->
-<!--}-->
-<!--}-->
-<!--}-->
-
-<!--const input = "2 + (3 * 4)";-->
-<!--const chars = new antlr4.InputStream(input);-->
-<!--const lexer = new SimpleLangLexer(chars);-->
-<!--const tokens = new antlr4.CommonTokenStream(lexer);-->
-<!--const parser = new SimpleLangParser(tokens);-->
-<!--const tree = parser.start();-->
-
-<!--const visitor = new MyVisitor();-->
-<!--const ast = visitor.visit(tree);-->
-<!--console.log(ast);-->
-<!--&gt;-->
-<!--</script>-->
-
 </body>
 </html>
 

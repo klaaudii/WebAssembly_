@@ -12,6 +12,21 @@ export class ProgramNode extends ASTNode {
 }
 
 
+export class ListNode extends ASTNode {
+    constructor(values) {
+        super();
+        this.values = values;
+    }
+}
+
+export class DisplayNode extends ASTNode {
+    constructor(value) {
+        super();
+        this.value = value;
+    }
+}
+
+
 export class MultiOpNode extends ASTNode {
     constructor(operator, values) {
         // super('MULTI_OP_NODE');
@@ -31,6 +46,14 @@ export class BiOpNode extends ASTNode {
     }
 }
 
+export class UniOpNode extends ASTNode {
+    constructor(operator, operand) {
+        super();
+        this.operator = operator
+        this.operand = operand;
+    }
+}
+
 export class OperatorNode extends ASTNode {
     constructor(value) {
         super();
@@ -39,6 +62,13 @@ export class OperatorNode extends ASTNode {
 }
 
 export class BiOperatorNode extends ASTNode {
+    constructor(value) {
+        super();
+        this.value = value
+    }
+}
+
+export class UniOperatorNode extends ASTNode {
     constructor(value) {
         super();
         this.value = value

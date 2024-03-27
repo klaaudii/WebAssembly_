@@ -50,6 +50,15 @@ export default class SchemeLikeLListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
+	// Enter a parse tree produced by SchemeLikeLParser#uniExpr.
+	enterUniExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by SchemeLikeLParser#uniExpr.
+	exitUniExpr(ctx) {
+	}
+
+
 	// Enter a parse tree produced by SchemeLikeLParser#callFnc.
 	enterCallFnc(ctx) {
 	}
@@ -104,6 +113,15 @@ export default class SchemeLikeLListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
+	// Enter a parse tree produced by SchemeLikeLParser#uniOperatorExpr.
+	enterUniOperatorExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by SchemeLikeLParser#uniOperatorExpr.
+	exitUniOperatorExpr(ctx) {
+	}
+
+
 	// Enter a parse tree produced by SchemeLikeLParser#localFncBodyExpr.
 	enterLocalFncBodyExpr(ctx) {
 	}
@@ -140,21 +158,30 @@ export default class SchemeLikeLListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
-	// Enter a parse tree produced by SchemeLikeLParser#loopExpr.
-	enterLoopExpr(ctx) {
-	}
-
-	// Exit a parse tree produced by SchemeLikeLParser#loopExpr.
-	exitLoopExpr(ctx) {
-	}
-
-
 	// Enter a parse tree produced by SchemeLikeLParser#vectorExpr.
 	enterVectorExpr(ctx) {
 	}
 
 	// Exit a parse tree produced by SchemeLikeLParser#vectorExpr.
 	exitVectorExpr(ctx) {
+	}
+
+
+	// Enter a parse tree produced by SchemeLikeLParser#listExpr.
+	enterListExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by SchemeLikeLParser#listExpr.
+	exitListExpr(ctx) {
+	}
+
+
+	// Enter a parse tree produced by SchemeLikeLParser#displayExpr.
+	enterDisplayExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by SchemeLikeLParser#displayExpr.
+	exitDisplayExpr(ctx) {
 	}
 
 
