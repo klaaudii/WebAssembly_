@@ -3137,7 +3137,11 @@ class MyVisitor extends SchemeLikeLVisitor {
     }
 
     visitIdentifier(ctx) {
-        return new AST.IdentifierNode(ctx.children[0].symbol.text);
+        let identifier = ""
+        for (let i = 0; i < ctx.children.length; i++) {
+            identifier += ctx.children[i].symbol.text
+        }
+        return new AST.IdentifierNode(identifier);
     }
 
     visitVectorExpr(ctx) {
@@ -3250,6 +3254,8 @@ class MyVisitor extends SchemeLikeLVisitor {
         let identifier;
         let body = [];
         let params = [];
+        console.log("visit define fnc")
+        console.log(ctx)
 
         for (let i = 0; i < ctx.children.length; i++){
             let child = ctx.children[i];
@@ -3261,7 +3267,10 @@ class MyVisitor extends SchemeLikeLVisitor {
                     params.push(this.visit(child));
                 }
             } else if (child.constructor !== TerminalNodeImpl) {
+                console.log("ano body")
+                console.log(child)
                 body = this.visit(child);
+                console.log(body)
             }
         }
 
@@ -3419,7 +3428,8 @@ let mem_i8;
 let memoryName = "mem"
 let memoryBase;
 let freeMemIndex;
-let editor
+let editor;
+let exportedFunctions;
 
 export function initEditor() {
      editor = ace.edit("editor", {
@@ -3442,6 +3452,7 @@ export function compileToWasm(){
     wasmModule.addMemoryImport(memoryName, "env", "memory")
     memoryBase = wasmModule.i32.const(0);
     freeMemIndex = 0;
+    exportedFunctions = [];
     memory = new WebAssembly.Memory({initial:100, maximum: 65536});
     mem_f32 = new Float32Array(memory.buffer);
     mem_i32 = new Int32Array(memory.buffer);
@@ -3477,9 +3488,13 @@ export function compileToWasm(){
     return binary;
 }
 
+
+let exports;
+
 export function runWasm(wasmBinary) {
     //TODO ked bezi nanovo, tak sa pamat vymaza, canvas vymaze aj output vymaze, tak?
-    document.getElementById("output").innerHTML = ""
+    document.getElementById("output").innerHTML = "";
+    document.getElementById("canvas-container").replaceChildren();
     const wasmBytes = new Uint8Array(wasmBinary);
 
     const importObject = {
@@ -3492,16 +3507,24 @@ export function runWasm(wasmBinary) {
             newline: newline,
             createCanvasElement: createCanvasElement,
             updateCanvasData: updateCanvasData,
+            canvasFillText: canvasFillText,
+            addCanvasOnClickListener: addCanvasOnClickListener,
         }};
 
     WebAssembly.instantiate(wasmBytes, importObject)
         .then(obj => {
             let result = obj.instance.exports.main();
+            exports = obj.instance.exports
             // if (result !== undefined) document.getElementById("output").innerHTML += result;
             // console.log(obj.instance.exports.main());
+
+
+
+            // Handle the result as needed
+            console.log("Result:", result);
             console.log(mem_f32);
             console.log(mem_i32);
-            console.log(mem_i8)
+            console.log(mem_i8);
         })
 }
 
@@ -3519,11 +3542,38 @@ function updateCanvasData(address) {
     let canvas = canvasMap.get(address);
     let width = mem_f32[address/4];
     let height = mem_f32[address/4 + 1];
-    console.log(address)
-    console.log(width, height)
     const image_data = new ImageData( new Uint8ClampedArray(mem_i32.buffer, address + 8,
         width*height*4), width, height);
     canvas.getContext('2d').putImageData(image_data, 0, 0);
+}
+
+function addCanvasOnClickListener(address, fncNum) {
+    let canvas = canvasMap.get(address);
+    canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const y = e.clientY - rect.top
+        //checkni ci berie dva argumenty
+        let xValue = new Uint32Array(new Float32Array([x]).buffer)[0] & -2;
+        let yValue = new Uint32Array(new Float32Array([y]).buffer)[0] & -2;
+        Object.entries(exports).at(fncNum).at(1)(xValue, yValue);
+    });
+}
+
+function canvasFillText(address, vector, x, y, s) {
+    let canvas = canvasMap.get(address);
+    let text = "";
+    let pointer = vector >> 2;
+    let length = mem_i32[pointer/4];
+    for (let i = 1; i <= length; i++) {
+        text += String.fromCharCode(mem_f32[(pointer+i*4)/4]);
+    }
+    let x_pos = new Float32Array(new Uint32Array([x]).buffer)[0];
+    let y_pos = new Float32Array(new Uint32Array([y]).buffer)[0];
+    let ctx = canvas.getContext('2d');
+    ctx.font = "bold 30px Arial";
+    ctx.fillText(text, x_pos, y_pos);
+
 }
 
 
@@ -3532,9 +3582,12 @@ function generateWasm(ast) {
     initCanvas();
     // addInitFunctions()
    // addTestFunctions()
+    let type = binaryen.none;
     let wasmExpressions = [];
     // let returnType = binaryen.none;
     for (let i = 0; i < ast.instructions.length; i++){
+        let instType = getNodeReturnType(ast.instructions[i])
+        if (instType !== undefined) type = instType;
         let ret = generateExpr(ast.instructions[i])
 
         if (ret !== undefined) {
@@ -3548,9 +3601,10 @@ function generateWasm(ast) {
         }
     }
 
+
     let mainBlock = wasmModule.block(null, wasmExpressions, binaryen.auto);
 
-    wasmModule.addFunction('main', [], binaryen.getExpressionType(mainBlock), [], mainBlock);
+    wasmModule.addFunction('main', [], type, [], mainBlock);
     wasmModule.addFunctionExport('main', 'main');
 }
 
@@ -3632,6 +3686,43 @@ function init() {
             wasmModule.i32.const(2)), wasmModule.i32.const(1)),
         ], binaryen.auto));
 
+    let notNumberError = wasmModule.if(wasmModule.i32.ne(
+            wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(1)),
+            wasmModule.i32.const(0)),
+        wasmModule.if(wasmModule.i32.eq(
+                wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(3)),
+                wasmModule.i32.const(3)),
+            wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualVector)], binaryen.none),
+            wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualList)], binaryen.none)));
+
+    wasmModule.addFunction("list-ref", binaryen.createType([binaryen.i32, binaryen.i32]), binaryen.i32,
+        [binaryen.i32,     //i         2
+            binaryen.i32,  //index     3
+            binaryen.i32,  //i-pointer 4
+        ],
+        wasmModule.block("",
+            [
+                emptyListError,
+                numberOrVectorError,
+                notNumberError,
+
+                wasmModule.local.set(2, wasmModule.i32.const(0)),
+                wasmModule.local.set(3, wasmModule.i32.trunc_s.f32(wasmModule.f32.reinterpret(wasmModule.local.get(1, binaryen.i32)))),
+                wasmModule.local.set(4,  wasmModule.i32.shr_u(
+                    wasmModule.i32.and(wasmModule.local.get(0, binaryen.i32),
+                        wasmModule.i32.const(-4)),
+                    wasmModule.i32.const(2))),
+
+                wasmModule.loop("loop", wasmModule.block("", [
+                    wasmModule.if(
+                    wasmModule.i32.eq(wasmModule.local.get(2, binaryen.i32), wasmModule.local.get(3, binaryen.i32)),
+                    wasmModule.return(wasmModule.i32.load(0,0, wasmModule.local.get(4, binaryen.i32))),),
+                    wasmModule.local.set(4, wasmModule.i32.load(4,0, wasmModule.local.get(4, binaryen.i32))),
+                      wasmModule.local.set(2, wasmModule.i32.add(wasmModule.local.get(2, binaryen.i32), wasmModule.i32.const(1))),
+                    wasmModule.br("loop")
+                ], binaryen.i32)),
+            ], binaryen.auto));
+
     wasmModule.addFunction("set-car!", binaryen.createType([binaryen.i32, binaryen.i32]), binaryen.none, [],
         wasmModule.block("",
             [
@@ -3680,14 +3771,6 @@ function init() {
                 wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedVectorActualNumber)], binaryen.none),
                 wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedVectorActualList)], binaryen.none)));
 
-    let notNumberError = wasmModule.if(wasmModule.i32.ne(
-                wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(1)),
-                wasmModule.i32.const(0)),
-            wasmModule.if(wasmModule.i32.eq(
-                    wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(3)),
-                    wasmModule.i32.const(3)),
-                wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualVector)], binaryen.none),
-                wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualList)], binaryen.none)));
 
     wasmModule.addFunction("process-int-input", binaryen.createType([binaryen.i32]), binaryen.i32, [],
         wasmModule.block("", [
@@ -3748,7 +3831,7 @@ function init() {
 
             wasmModule.local.set(3, wasmModule.i32.shr_u(
                 wasmModule.local.get(0, binaryen.i32),
-                wasmModule.i32.const(3))),
+                wasmModule.i32.const(2))),
 
             wasmModule.if(wasmModule.i32.lt_s(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(0)),
                 wasmModule.call("error", [wasmModule.i32.const(ErrorType.IndexOutOfBounds)], binaryen.none)
@@ -3774,10 +3857,18 @@ function initCanvas() {
     wasmModule.addFunctionImport("update-canvas-data-js", "env", "updateCanvasData",
         binaryen.createType([binaryen.i32]), binaryen.none);
 
+    wasmModule.addFunctionImport("add-canvas-onclick-listener-js", "env", "addCanvasOnClickListener",
+        binaryen.createType([binaryen.i32, binaryen.i32]), binaryen.none);
+
+    wasmModule.addFunctionImport("canvas-fill-text-js", "env", "canvasFillText",
+        binaryen.createType([binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32]), binaryen.none);
+
+
     wasmModule.addFunction("canvas", binaryen.createType([binaryen.i32, binaryen.i32]), binaryen.i32,
         [binaryen.i32, //canvas base
          binaryen.i32, //processed width
-         binaryen.i32  //processed height
+         binaryen.i32, //processed height
+         binaryen.i32  //canvas memory size
         ],
         wasmModule.block("",
             [   wasmModule.local.set(2, wasmModule.global.get("freeMemIndex", binaryen.i32)),
@@ -3789,94 +3880,197 @@ function initCanvas() {
                     wasmModule.local.get(0, binaryen.i32)),
                 wasmModule.i32.store(4,0, wasmModule.local.get(2, binaryen.i32),
                     wasmModule.local.get(1, binaryen.i32)),
-                // wasmModule.call("update-canvas-data-js",
-                //     [wasmModule.local.get(2, binaryen.i32)], binaryen.none),
-                wasmModule.global.set("freeMemIndex",
-                    wasmModule.i32.mul(
+                wasmModule.global.set("freeMemIndex", wasmModule.i32.add( wasmModule.i32.const(8),
+                    wasmModule.global.get("freeMemIndex", binaryen.i32))),
+                wasmModule.local.set(5, wasmModule.i32.mul(
                     wasmModule.i32.mul(wasmModule.local.get(3, binaryen.i32), wasmModule.local.get(4, binaryen.i32)),
                     wasmModule.i32.const(4))),
-                wasmModule.local.get(2, binaryen.i32)
+                wasmModule.memory.fill(wasmModule.global.get("freeMemIndex", binaryen.i32), wasmModule.i32.const(-1),
+                    wasmModule.local.get(5, binaryen.i32)),
+                wasmModule.call("update-canvas-data-js",
+                    [wasmModule.local.get(2, binaryen.i32)], binaryen.none),
+                wasmModule.global.set("freeMemIndex",
+                    wasmModule.i32.add(wasmModule.global.get("freeMemIndex", binaryen.i32),
+                    wasmModule.local.get(5, binaryen.i32))),
+                wasmModule.local.get(2, binaryen.i32),
             ], binaryen.i32))
 
-    // wasmModule.addFunction("color", binaryen.createType([binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32]), binaryen.i32,
-    //     [binaryen.i32,
-    //         binaryen.i32],
-    //     wasmModule.block("",
-    //         [       //TODO treba nejaku zmenu? lebo v konecnom dosledku chceme toto cislo mat v pamati do canvasu
-    //             //treba ale call process_int_input
-    //                 wasmModule.i32.or(
-    //                     wasmModule.i32.or(
-    //                         wasmModule.i32.or(
-    //                             wasmModule.i32.shl(
-    //                                 wasmModule.i32.and(wasmModule.local.get(3, binaryen.i32),
-    //                                     wasmModule.i32.const(0xFF)),
-    //                                 wasmModule.i32.const(24)),
-    //                             wasmModule.i32.shl(
-    //                                 wasmModule.i32.and(wasmModule.local.get(2, binaryen.i32),
-    //                                     wasmModule.i32.const(0xFF)), wasmModule.i32.const(16))
-    //                         ),
-    //                         wasmModule.i32.shl(
-    //                             wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32),
-    //                                 wasmModule.i32.const(0xFF)), wasmModule.i32.const(8))
-    //                     ),
-    //                     wasmModule.i32.and(wasmModule.local.get(0, binaryen.i32),
-    //                         wasmModule.i32.const(0xFF))),
-    //         ], binaryen.auto))
-    //
-    //
-    // wasmModule.addFunction("fill-rect", binaryen.createType([binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32]), binaryen.none,
-    //     [binaryen.i32,  //i
-    //         binaryen.i32, //j
-    //         binaryen.i32,  //rec_start 8
-    //         binaryen.i32, //canvas_width 9
-    //         binaryen.i32 //canvas_height 10
-    //     ],
-    //     wasmModule.block("",
-    //         [
-    //
-    //             wasmModule.local.set(6, wasmModule.i32.const(0)),
-    //             wasmModule.local.set(7, wasmModule.i32.const(0)),
-    //             wasmModule.local.set(9,
-    //                 wasmModule.f32.load(4, 0, wasmModule.i32.trunc_s.f32(wasmModule.local.get(0, binaryen.f32)))),
-    //             wasmModule.local.set(8, wasmModule.f32.add(wasmModule.f32.add(wasmModule.local.get(0, binaryen.f32),
-    //                 wasmModule.f32.const(8)),  wasmModule.f32.mul(wasmModule.f32.add(wasmModule.local.get(1, binaryen.f32),
-    //                     wasmModule.f32.mul(wasmModule.local.get(2, binaryen.f32), wasmModule.local.get(9, binaryen.f32))),
-    //                 wasmModule.f32.const(4))  )),
-    //
-    //
-    //
-    //
-    //             wasmModule.loop("height", wasmModule.block("", [
-    //
-    //                 wasmModule.local.set(6, wasmModule.f32.const(0)),
-    //                 wasmModule.loop("width", wasmModule.block("", [
-    //                     wasmModule.f32.store(0,0,
-    //                         wasmModule.i32.trunc_s.f32(wasmModule.f32.add(
-    //                             wasmModule.local.get(8, binaryen.f32),
-    //                             wasmModule.f32.add(
-    //                                 wasmModule.f32.mul(wasmModule.f32.mul(
-    //                                     wasmModule.local.get(9, binaryen.f32),wasmModule.f32.const(4)),  wasmModule.local.get(7, binaryen.f32)),
-    //                                 wasmModule.f32.mul(
-    //                                     wasmModule.local.get(6, binaryen.f32), wasmModule.f32.const(4))))),
-    //                         wasmModule.local.get(5, binaryen.f32),
-    //                     ),
-    //                     wasmModule.local.set(6, wasmModule.f32.add(wasmModule.local.get(6, binaryen.f32), wasmModule.f32.const(1))),
-    //                     wasmModule.if(wasmModule.f32.lt(wasmModule.local.get(6, binaryen.f32), wasmModule.local.get(3, binaryen.f32)),
-    //                         wasmModule.br("width")),])),
-    //                 wasmModule.local.set(7, wasmModule.f32.add(wasmModule.local.get(7, binaryen.f32), wasmModule.f32.const(1))),
-    //                 wasmModule.if(wasmModule.f32.lt(wasmModule.local.get(7, binaryen.f32), wasmModule.local.get(4, binaryen.f32)),
-    //                     wasmModule.br("height")),])),
-    //
-    //             wasmModule.call("update-canvas-data",
-    //                 [wasmModule.local.get(0, binaryen.f32)], binaryen.none),
-    //         ], binaryen.none))
+    wasmModule.addFunction("color", binaryen.createType([binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32]), binaryen.i32,
+        [binaryen.i32,
+            binaryen.i32],
+        wasmModule.block("",
+            [       //TODO treba nejaku zmenu? lebo v konecnom dosledku chceme toto cislo mat v pamati do canvasu
+                    wasmModule.i32.or(
+                        wasmModule.i32.or(
+                            wasmModule.i32.or(
+                                wasmModule.i32.shl(
+                                    wasmModule.i32.and(wasmModule.call("process-int-input", [wasmModule.local.get(3, binaryen.i32)], binaryen.i32),
+                                        wasmModule.i32.const(0xFF)),
+                                    wasmModule.i32.const(24)),
+                                wasmModule.i32.shl(
+                                    wasmModule.i32.and(wasmModule.call("process-int-input", [wasmModule.local.get(2, binaryen.i32)], binaryen.i32),
+                                        wasmModule.i32.const(0xFF)), wasmModule.i32.const(16))
+                            ),
+                            wasmModule.i32.shl(
+                                wasmModule.i32.and(wasmModule.call("process-int-input", [wasmModule.local.get(1, binaryen.i32)], binaryen.i32),
+                                    wasmModule.i32.const(0xFF)), wasmModule.i32.const(8))
+                        ),
+                        wasmModule.i32.and(wasmModule.call("process-int-input", [wasmModule.local.get(0, binaryen.i32)], binaryen.i32),
+                            wasmModule.i32.const(0xFF))),
+            ], binaryen.i32))
 
+
+    wasmModule.addFunction("fill-rect", binaryen.createType([binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32]), binaryen.none,
+        [binaryen.i32,     //i 6
+            binaryen.i32,  //j 7
+            binaryen.i32,  //col_start 8
+            binaryen.i32,  //canvas_width 9
+            binaryen.i32,  //process_start_x 10
+            binaryen.i32,  //process_start_y 11
+            binaryen.i32,  //process_end_x 12
+            binaryen.i32,  //process_end_y 13
+        ],
+        wasmModule.block("",
+            [
+                wasmModule.local.set(10, wasmModule.call("process-int-input", [wasmModule.local.get(1, binaryen.i32)], binaryen.i32)),
+                wasmModule.local.set(11, wasmModule.call("process-int-input", [wasmModule.local.get(2, binaryen.i32)], binaryen.i32)),
+                wasmModule.local.set(12, wasmModule.call("process-int-input", [wasmModule.local.get(3, binaryen.i32)], binaryen.i32)),
+                wasmModule.local.set(13, wasmModule.call("process-int-input", [wasmModule.local.get(4, binaryen.i32)], binaryen.i32)),
+
+                wasmModule.local.set(6, wasmModule.i32.const(0)),
+                wasmModule.local.set(7, wasmModule.i32.const(0)),
+                wasmModule.local.set(9, wasmModule.call("process-int-input", [wasmModule.i32.load(0, 0, wasmModule.local.get(0, binaryen.i32))], binaryen.i32)),
+
+                wasmModule.local.set(8, wasmModule.i32.add(wasmModule.i32.add(wasmModule.local.get(0, binaryen.i32),
+                    wasmModule.i32.const(8)),  wasmModule.i32.mul(wasmModule.i32.add(wasmModule.local.get(10, binaryen.i32),
+                        wasmModule.i32.mul(wasmModule.local.get(11, binaryen.i32), wasmModule.local.get(9, binaryen.i32))),
+                    wasmModule.i32.const(4)))),
+
+                wasmModule.loop("height", wasmModule.block("", [
+                    wasmModule.local.set(6, wasmModule.i32.const(0)),
+                    wasmModule.loop("width", wasmModule.block("", [
+                        wasmModule.i32.store(0,0,
+                            wasmModule.i32.add(
+                            wasmModule.local.get(8, binaryen.i32),
+                                wasmModule.i32.add(
+                            wasmModule.i32.mul(wasmModule.local.get(7, binaryen.i32), wasmModule.i32.const(4)),
+                                wasmModule.i32.mul(wasmModule.local.get(9, binaryen.i32),
+                                wasmModule.i32.mul(wasmModule.local.get(6, binaryen.i32), wasmModule.i32.const(4))))),
+                            wasmModule.local.get(5, binaryen.i32),
+                        ),
+                        wasmModule.local.set(6, wasmModule.i32.add(wasmModule.local.get(6, binaryen.i32), wasmModule.i32.const(1))),
+                        wasmModule.if(wasmModule.i32.lt_s(wasmModule.local.get(6, binaryen.i32), wasmModule.local.get(13, binaryen.i32)),
+                            wasmModule.br("width")),])),
+                    wasmModule.local.set(7, wasmModule.i32.add(wasmModule.local.get(7, binaryen.i32), wasmModule.i32.const(1))),
+                    wasmModule.if(wasmModule.i32.lt_s(wasmModule.local.get(7, binaryen.i32), wasmModule.local.get(12, binaryen.i32)),
+                        wasmModule.br("height")),])),
+                wasmModule.call("update-canvas-data-js",
+                    [wasmModule.local.get(0, binaryen.i32)], binaryen.none),
+            ], binaryen.none))
+
+
+    wasmModule.addFunction("fill-arc", binaryen.createType([binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32]), binaryen.none,
+        [binaryen.f32,     //i 5
+            binaryen.f32,  //j 6
+            binaryen.f32,  //col_start 7
+            binaryen.f32,  //canvas_width 8
+            binaryen.f32,  //processed_center_x 9
+            binaryen.f32,  //processed_center_y 10
+            binaryen.f32,  //processed_radius 11
+            binaryen.f32,  //end_check 12
+            binaryen.i32,  //helper 13
+        ],
+        wasmModule.block("",
+            [
+
+                wasmModule.local.set(9, wasmModule.f32.convert_s.i32(wasmModule.call("process-int-input", [wasmModule.local.get(1, binaryen.i32)], binaryen.i32))),
+                wasmModule.local.set(10, wasmModule.f32.convert_s.i32(wasmModule.call("process-int-input", [wasmModule.local.get(2, binaryen.i32)], binaryen.i32))),
+                wasmModule.local.set(11, wasmModule.f32.convert_s.i32(wasmModule.call("process-int-input", [wasmModule.local.get(3, binaryen.i32)], binaryen.i32))),
+
+                wasmModule.local.set(5, wasmModule.f32.const(0)),
+                wasmModule.local.set(6, wasmModule.f32.const(0)),
+
+                wasmModule.local.set(12, wasmModule.f32.add(wasmModule.local.get(11, binaryen.f32), wasmModule.local.get(11, binaryen.f32))),
+
+                wasmModule.local.set(8, wasmModule.f32.convert_s.i32(wasmModule.call("process-int-input", [wasmModule.i32.load(0, 0, wasmModule.local.get(0, binaryen.i32))], binaryen.i32))),
+
+                wasmModule.local.set(7, wasmModule.f32.add(wasmModule.f32.add(wasmModule.f32.convert_s.i32(wasmModule.local.get(0, binaryen.i32)),
+                    wasmModule.f32.const(8)),  wasmModule.f32.mul(wasmModule.f32.add(wasmModule.f32.sub(wasmModule.local.get(9, binaryen.f32),
+                            wasmModule.local.get(11, binaryen.f32)),
+                        wasmModule.f32.mul(wasmModule.f32.sub(wasmModule.local.get(10, binaryen.f32),
+                            wasmModule.local.get(11, binaryen.f32)), wasmModule.local.get(8, binaryen.f32))),
+                    wasmModule.f32.const(4)))),
+                // wasmModule.local.get(8, binaryen.f32),
+
+                wasmModule.loop("height", wasmModule.block("", [
+                    wasmModule.local.set(5, wasmModule.f32.const(0)),
+                    wasmModule.loop("width", wasmModule.block("", [
+
+                        wasmModule.if(wasmModule.f32.lt(
+                        wasmModule.f32.sqrt(
+                        wasmModule.f32.add(wasmModule.f32.mul(
+                            wasmModule.f32.sub(wasmModule.local.get(11, binaryen.f32), wasmModule.local.get(5, binaryen.f32)),
+                            wasmModule.f32.sub(wasmModule.local.get(11, binaryen.f32), wasmModule.local.get(5, binaryen.f32))),
+                            wasmModule.f32.mul(
+                                wasmModule.f32.sub(wasmModule.local.get(11, binaryen.f32), wasmModule.local.get(6, binaryen.f32)),
+                                wasmModule.f32.sub(wasmModule.local.get(11, binaryen.f32), wasmModule.local.get(6, binaryen.f32))))),
+                                wasmModule.local.get(11, binaryen.f32)),
+
+                        wasmModule.block("", [
+                            wasmModule.local.set(13, wasmModule.i32.trunc_s.f32(wasmModule.f32.add(
+                                wasmModule.local.get(7, binaryen.f32),
+                                wasmModule.f32.add(
+                                    wasmModule.f32.mul(wasmModule.local.get(6, binaryen.f32), wasmModule.f32.const(4)),
+                                    wasmModule.f32.mul(wasmModule.local.get(8, binaryen.f32),
+                                        wasmModule.f32.mul(wasmModule.local.get(5, binaryen.f32), wasmModule.f32.const(4))))))),
+
+                            wasmModule.if(wasmModule.i32.gt_s(wasmModule.local.get(13, binaryen.i32), wasmModule.i32.add(wasmModule.local.get(0, binaryen.i32), wasmModule.i32.const(4))),
+                            wasmModule.i32.store(0,0,wasmModule.local.get(13, binaryen.f32), wasmModule.local.get(4, binaryen.i32))),
+
+
+                        ], binaryen.auto),),
+
+
+
+
+
+
+
+
+                        wasmModule.local.set(5, wasmModule.f32.add(wasmModule.local.get(5, binaryen.f32), wasmModule.f32.const(1))),
+                        wasmModule.if(wasmModule.f32.lt(wasmModule.local.get(5, binaryen.f32), wasmModule.local.get(12, binaryen.f32)),
+                            wasmModule.br("width")),])),
+                    wasmModule.local.set(6, wasmModule.f32.add(wasmModule.local.get(6, binaryen.f32), wasmModule.f32.const(1))),
+                    wasmModule.if(wasmModule.f32.lt(wasmModule.local.get(6, binaryen.f32), wasmModule.local.get(12, binaryen.f32)),
+                        wasmModule.br("height")),])),
+
+                wasmModule.call("update-canvas-data-js",
+                    [wasmModule.local.get(0, binaryen.i32)], binaryen.none),
+            ], binaryen.none))
+
+    wasmModule.addFunction("fill-text", binaryen.createType([binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32 ]), binaryen.none, [],
+    wasmModule.call("canvas-fill-text-js",
+        [wasmModule.local.get(0, binaryen.i32), wasmModule.local.get(1, binaryen.i32),
+            wasmModule.local.get(2, binaryen.i32), wasmModule.local.get(3, binaryen.i32)], binaryen.none));
 
 
 }
 
+function generateCanvasOnClick(node, ctxVars) {
 
+    if (node.params.length !== 2 || node.params[1].constructor !== AST.IdentifierNode) {
+        throw new CustomError("Expected two params: canvas, functionName")
+    }
+    if (wasmModule.getFunction(node.params[1].value) === 0) {
+        throw new CustomError("Function does NOT exists")
+    }
 
+    if (wasmModule.getExport(node.params[1].value) === 0) {
+        exportedFunctions.push(node.params[1].value)
+        wasmModule.addFunctionExport(node.params[1].value, node.params[1].value)
+    }
+    return wasmModule.call("add-canvas-onclick-listener-js", [generateExpr(node.params[0], ctxVars), wasmModule.i32.const(exportedFunctions.indexOf(node.params[1].value))], binaryen.none)
+}
 
 function newline() {
     document.getElementById("output").innerHTML += '\n';
@@ -3999,6 +4193,7 @@ function generateDefineFuncExpr(node, ctxVars) {
 
 
     let varsType = [];
+
     if (node.body.constructor === AST.LocalFncBodyNode) {
         for (let i = 0; i < node.body.vars.length; i++) {
             varsType.push(binaryen.i32);
@@ -4014,19 +4209,29 @@ function generateDefineFuncExpr(node, ctxVars) {
 }
 
 function analyzeTypeOfFunction(node) {
-    console.log("analyze")
     let type = binaryen.none;
+
+    //kvoli mainu
+    if (Array.isArray(node)) {
+        for (let i = node.length - 1; i > -1; i--) {
+            if (getNodeReturnType(node[i]) !== undefined) return binaryen.i32;
+        }
+        return type;
+    }
+
     if (node.constructor === AST.CallLambdaFuncNode) {
         return binaryen.i32
     }
     let body = node.body.constructor === AST.LocalFncBodyNode ? node.body.fncBody.body  : node.body.body;
+    console.log("body")
+    console.log(body)
     for (let i = body.length - 1; i > -1; i--) {
-        if (body[i].constructor === AST.CallFuncNode && node.identifier.value !== body[i].identifier.value) {
+        if (body[i].constructor === AST.CallFuncNode && node.params.includes(body[i].identifier.value)) {
             return binaryen.i32
         }
         if (getNodeReturnType(body[i]) !== undefined) return binaryen.i32;
     }
-    // console.log(type)
+    console.log(type)
     return type;
 }
 
@@ -4035,20 +4240,36 @@ function getNodeReturnType(node) {
     console.log(node)
     if (node.constructor === AST.LiteralNode ||
         node.constructor === AST.MultiOpNode ||
+        node.constructor === AST.UniOpNode ||
+        node.constructor === AST.BiOpNode ||
         node.constructor === AST.IdentifierNode ||
         node.constructor === AST.ListNode ||
         node.constructor === AST.VectorNode ) {
         return binaryen.i32
     }
-    if (node.constructor === AST.CallFuncNode) {
+    else if (node.constructor === AST.CallFuncNode) {
         let funRef = wasmModule.getFunction(node.identifier.value);
         if (funRef !== 0) {
             if (binaryen.getFunctionInfo(funRef).results === 2 || binaryen.getFunctionInfo(funRef).results === 4) return binaryen.i32
         }
     }
-    if (node.constructor === AST.IfNode) {
-        return getNodeReturnType(node.ifTrue);
+    else if (node.constructor === AST.IfNode) {
+        console.log("returniF")
+        console.log(node)
+        let ifTrueType = getNodeReturnType(node.ifTrue);
+        let ifFalseType = node.ifFalse !== undefined ? getNodeReturnType(node.ifFalse) : undefined;
+        console.log(ifTrueType)
+        console.log(ifFalseType)
+        if (ifTrueType !== undefined) return binaryen.i32;
+        else if (ifFalseType !== undefined) return binaryen.i32;
     }
+    else if (node.constructor === AST.BeginNode) {
+        for (let i = 0; i < node.expressions.length; i++) {
+            if (getNodeReturnType(node.expressions[i]) !== undefined) return binaryen.i32;
+        }
+    }
+
+
 }
 
 function generateLocalFncBodyExpr(node, ctxVars){
@@ -4101,6 +4322,8 @@ function generateBeginExpr(node, ctxVars) {
 function generateCallFuncExpr(node, ctxVars){
     let operands = [];
     let type = [];
+    if(node.identifier.value === 'canvas-onclick') return generateCanvasOnClick(node, ctxVars);
+
     for (let i = 0; i < node.params.length; i++){
 
         operands.push(generateExpr(node.params[i], ctxVars))
@@ -4112,8 +4335,6 @@ function generateCallFuncExpr(node, ctxVars){
         if (ctxVars === undefined || !ctxVars.includes(node.identifier.value)) {
             throw new CustomError("Unbound variable: " + node.identifier.value)
         }
-        console.log(node.identifier.value)
-        console.log(ctxVars.includes(node.identifier.value))
         let localVariable = wasmModule.local.get(ctxVars.indexOf(node.identifier.value), wasmModule.i32);
         return wasmModule.call_indirect(tableName, localVariable, operands, paramsType, binaryen.i32) //TODO? result type proste neviem zistit dopredu
     }
@@ -4181,6 +4402,19 @@ function generateMultiOpExpr(node, params) {
                     wasmModule.f32.reinterpret(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.values[i], params)], binaryen.i32)));
             }
             return wasmModule.i32.reinterpret(resultDiv);
+        case 'and':
+            let resultAnd = wasmModule.i32.and(generateExpr(node.values[0], params), wasmModule.i32.const(1));
+            for (let i = 1; i < node.values.length; i++) {
+                resultAnd = wasmModule.i32.and(resultAnd, generateExpr(node.values[i], params))
+            }
+            return resultAnd;
+        case 'or':
+            let resultOr = wasmModule.i32.or(generateExpr(node.values[0], params), wasmModule.i32.const(0));
+            for (let i = 1; i < node.values.length; i++) {
+                resultOr = wasmModule.i32.or(resultOr, generateExpr(node.values[i], params))
+            }
+            return resultOr;
+
 
         default:
             throw new Error('Unsupported operator');
@@ -4208,12 +4442,14 @@ function generateBiOpExpr(node, ctxVars) {
         case '!=':
             return wasmModule.i32.ne(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.left, ctxVars)], binaryen.i32),
                 wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.right, ctxVars)], binaryen.i32));
-        case 'and':
-            return wasmModule.i32.and(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.left, ctxVars)], binaryen.i32),
-                wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.right, ctxVars)], binaryen.i32));
-        case 'or':
-            return wasmModule.i32.or(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.left, ctxVars)], binaryen.i32),
-                wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.right, ctxVars)], binaryen.i32));
+        case 'quotient':
+            return wasmModule.i32.and(wasmModule.i32.reinterpret(
+                wasmModule.f32.trunc(
+                wasmModule.f32.div(
+                wasmModule.f32.reinterpret(
+                wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.left, ctxVars)], binaryen.i32)),
+                wasmModule.f32.reinterpret(
+                wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.right, ctxVars)], binaryen.i32))))), wasmModule.i32.const(-2));
         default:
             throw new Error('Unsupported operator');
     }
@@ -4231,7 +4467,35 @@ function generateUniOpExpr(node, ctxVars) {
                     wasmModule.call("error", [wasmModule.i32.const(10)], binaryen.none)),
                 wasmModule.i32.eq(generateExpr(node.operand,ctxVars), wasmModule.i32.const(-3))
 
-            ], binaryen.auto)
+            ], binaryen.auto);
+        case 'truncate':
+            return wasmModule.i32.and(
+            wasmModule.i32.reinterpret(
+                wasmModule.f32.trunc(
+                wasmModule.f32.reinterpret(
+                wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.operand, ctxVars)], binaryen.i32)))),
+            wasmModule.i32.const(-2));
+        case 'ceiling':
+            return wasmModule.i32.and(
+                wasmModule.i32.reinterpret(
+                    wasmModule.f32.ceil(
+                        wasmModule.f32.reinterpret(
+                            wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.operand, ctxVars)], binaryen.i32)))),
+                wasmModule.i32.const(-2));
+        case 'round':
+            return wasmModule.i32.and(
+                wasmModule.i32.reinterpret(
+                    wasmModule.f32.round(
+                        wasmModule.f32.reinterpret(
+                            wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.operand, ctxVars)], binaryen.i32)))),
+                wasmModule.i32.const(-2));
+        case 'floor':
+            return wasmModule.i32.and(
+                wasmModule.i32.reinterpret(
+                    wasmModule.f32.floor(
+                        wasmModule.f32.reinterpret(
+                            wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.operand, ctxVars)], binaryen.i32)))),
+                wasmModule.i32.const(-2));
         default:
             throw new Error('Unsupported operator');
     }
@@ -4239,10 +4503,7 @@ function generateUniOpExpr(node, ctxVars) {
 
 
 function generateIfExpr(node, ctxVars) {
-    let condition;
-    if (node.condition.constructor === AST.BiOpNode || node.condition.constructor === AST.UniOpNode) {
-        condition = generateExpr(node.condition, ctxVars)
-    }
+    let condition = generateExpr(node.condition, ctxVars)
     if (node.ifFalse === undefined) return wasmModule.if(condition, generateExpr(node.ifTrue, ctxVars));
     return wasmModule.if(condition, generateExpr(node.ifTrue, ctxVars), generateExpr(node.ifFalse, ctxVars));
 }

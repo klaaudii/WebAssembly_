@@ -90,8 +90,102 @@
 
 <body>
 
+
+<!--(fill-arc board 150 50 40 white)-->
+<!--(fill-arc board 250 50 40 white)-->
+<!--(fill-arc board 350 50 40 white)-->
+<!--(fill-arc board 450 50 40 (color 255 0 0 200))-->
+<!--(fill-arc board 450 50 34 red)-->
+
 <div id="editor-container">
-    <div id="editor">(canvas 200 200)</div>
+    <div id="editor">
+
+
+
+(define board-state (list (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0)))
+(define n-rows 7)
+
+
+(define red (color 255 0 0 255))
+(define white (color 255 255 255 255))
+(define blue (color 0 0 200 255))
+(define yellow (color 255 255 0 255))
+(define token-radius 45)
+(define board (canvas 700 600))
+(define player 1)
+
+
+(define (draw-token x y col)
+(fill-arc board (+ 50 (* x 100)) (+ 50 (* y 100)) token-radius col))
+
+
+(define (draw-token-row i j)
+(if (<= j 7) (begin (draw-token j i white) (draw-token-row i (+ j 1))) ))
+
+
+(define (draw-token-spaces i)
+(if (<= i 6) (begin (draw-token-row i 0) (draw-token-spaces (+ i 1)))))
+
+
+(define (draw-board)
+(fill-rect board 0 0 700 600 blue)
+(draw-token-spaces 0))
+
+
+(draw-board)
+
+
+(define (token-space-is-empty r c)
+(if (> r 5) 0 (if (= (vector-ref (list-ref board-state r) c) 0) 1 0)))
+
+
+(define (get-dir-token-count r c dr dc count)
+(let ((nr (+ r dr)) (nc (+ c dc)))
+
+(if (and (<= nr 5) (>= nr 0) (>= nc 0) (<= nc 6))
+(if (= (vector-ref (list-ref board-state r) c) (vector-ref (list-ref board-state nr) nc))
+
+(get-dir-token-count nr nc dr dc (+ 1 count))  count ) count)))
+
+(define (check-dir r c dr dc)
+(if (> (+ (get-dir-token-count r c dr dc 0) (get-dir-token-count r c (* -1 dr) (* -1 dc) 0)) 2) 1 0))
+
+
+(define (check-four r c)
+(if (= (check-dir r c 0 1) 1) 1
+(if (= (check-dir r c 1 0) 1) 1
+(if (= (check-dir r c 1 -1) 1) 1
+(if (= (check-dir r c 1 1) 1) 1 0)))))
+
+(define (new-game) (display 123456))
+
+
+(define (put-token r c)
+(if (= player 1)
+(begin (draw-token c r red) (set! player 2) (vector-set! (list-ref board-state r) c 2))
+(begin (draw-token c r yellow) (vector-set! (list-ref board-state r) c 1) (set! player 1)))
+(if (= (check-four r c) 1) (begin (if (= player 2) (fill-text board (vector 82 69 68 32 87 79 78 33) 250 250)
+(fill-text board (vector 89 69 76 76 79 87 32 87 79 78 33) 250 250))
+(canvas-onclick board new-game)
+)))
+
+
+
+
+(define (click x y)
+(let ((c (quotient (ceiling x) 100))(r (quotient (ceiling y) 100)))
+(if (and (= (token-space-is-empty r c) 1) (= (token-space-is-empty (+ r 1) c) 0))  (put-token r c))))
+
+(canvas-onclick board click)
+
+
+
+
+
+
+
+
+    </div>
     <div id="buttons">
         <button id="compile-button" onclick="compile()">Compile</button>
         <button id="run-button" onclick="run()">Run</button>
@@ -155,7 +249,7 @@
 </body>
 </html>
 
-
 <!--antlr4 -Dlanguage=JavaScript SchemeLikeL.g4 -visitor-->
 <!--treba zmenit cestu k antlr4 vo vygenerovanych filoch-->
 <!--import antlr4 from './antlr4/index.web.js';-->
+

@@ -5,7 +5,7 @@ var SchemeLikeHighlightRules = function () {
     var keywordControl = "let|if";
     var keywordOperator = "and|or|null?";
     // var constantLanguage = "#t|#f";
-    var supportFunctions = "display|car|cdr|lambda|set!|list|vector-ref|vector-set!|car-set!|cdr-set!|canvas";  //tu dopln grafiku
+    var supportFunctions = "display|car|cdr|lambda|set!|list|vector-ref|vector-set!|car-set!|cdr-set!|canvas|fill-rect|fill-arc|color|canvas-onclick";  //tu dopln grafiku
     var keywordMapper = this.createKeywordMapper({
         "keyword.control": keywordControl,
         "keyword.operator": keywordOperator,

@@ -28,6 +28,5 @@ WS=21
 'vector'=7
 'list'=8
 'display'=9
-'null?'=12
 '('=14
 ')'=15
