@@ -157,7 +157,11 @@
 (if (= (check-dir r c 1 -1) 1) 1
 (if (= (check-dir r c 1 1) 1) 1 0)))))
 
-(define (new-game) (display 123456))
+(define (new-game) (set! board-state (list (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0)))
+(set! player 1)
+(draw-board)
+(canvas-onclick board click)
+)
 
 
 (define (put-token r c)
