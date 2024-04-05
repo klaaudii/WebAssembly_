@@ -1,6 +1,6 @@
 grammar SchemeLikeL;
 
-start: SPACE? (expr | defineGlobalVar | defineFnc | literal | identifier | callFnc | setExpr | listExpr | vectorExpr | displayExpr | uniExpr | ifExpr)+ EOF;
+start: (SPACE? (expr | defineGlobalVar | defineFnc | literal | identifier | callFnc | setExpr | listExpr | vectorExpr | displayExpr | uniExpr | ifExpr | beginExpr))+ EOF;
 
 expr: SPACE? PSTART SPACE? operatorExpr (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr )+ SPACE? PEND SPACE?;
 logExpr: SPACE? PSTART SPACE? logOperatorExpr (logUniExpr | logBiExpr)+ SPACE? PEND SPACE?;

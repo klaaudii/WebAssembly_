@@ -3116,6 +3116,7 @@ class MyVisitor extends SchemeLikeLVisitor {
                 case SchemeLikeLParser.ListExprContext:
                 case SchemeLikeLParser.DisplayExprContext:
                 case SchemeLikeLParser.UniExprContext:
+                case SchemeLikeLParser.LiteralContext:
                     body.push(this.visit(ctx.children[i]));
                     break;
                 case TerminalNodeImpl:
@@ -3667,7 +3668,11 @@ function generateWasm(ast) {
     for (let i = 0; i < ast.instructions.length; i++) {
         let ret = generateExpr(ast.instructions[i])
         if (ret !== undefined) {
-            wasmExpressions.push(ret);
+            if (i !== ast.instructions.length - 1 && getNodeReturnType(ast.instructions[i]) === binaryen.i32) {
+                wasmExpressions.push(wasmModule.drop(ret));
+            } else {
+                wasmExpressions.push(ret);
+            }
         }
     }
 
