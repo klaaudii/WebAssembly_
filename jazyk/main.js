@@ -3035,10 +3035,10 @@ import binaryen from './binaryen/index.js'
 import * as AST from './ast.js';
 import TerminalNodeImpl from "./antlr4/tree/TerminalNodeImpl.js";
 
-class CustomError extends Error {
+class TypeError extends Error {
     constructor(message) {
         super(message);
-        this.name = "CustomError";
+        this.name = "TypeError";
     }
 }
 
@@ -3063,31 +3063,31 @@ function throwError(value) {
 
     switch (value) {
         case ErrorType.ExpectedNumberActualList:
-            throw new CustomError("Expected type: Number, actual type: List");
+            throw new TypeError("expected type: Number, actual type: List");
         case ErrorType.ExpectedNumberActualVector:
-            throw new CustomError("Expected type: Number, actual type: Vector");
+            throw new TypeError("expected type: Number, actual type: Vector");
         case ErrorType.ExpectedListActualVector:
-            throw new CustomError("Expected type: List, actual type: Vector");
+            throw new TypeError("expected type: List, actual type: Vector");
         case ErrorType.ExpectedListActualNumber:
-            throw new CustomError("Expected type: List, actual type: Number");
+            throw new TypeError("expected type: List, actual type: Number");
         case ErrorType.ExpectedVectorActualList:
-            throw new CustomError("Expected type: Vector, actual type: List");
+            throw new TypeError("expected type: Vector, actual type: List");
         case ErrorType.ExpectedVectorActualNumber:
-            throw new CustomError("Expected type: Vector, actual type: Number");
+            throw new TypeError("expected type: Vector, actual type: Number");
         case ErrorType.ExpectedVectorActualVoid:
-            throw new CustomError("Expected type: Vector, actual type: Void");
+            throw new TypeError("expected type: Vector, actual type: Void");
         case ErrorType.ExpectedListActualVoid:
-            throw new CustomError("Expected type: List, actual type: Void");
+            throw new TypeError("expected type: List, actual type: Void");
         case ErrorType.ExpectedNumberActualVoid:
-            throw new CustomError("Expected type: Number, actual type: Void");
+            throw new TypeError("expected type: Number, actual type: Void");
         case ErrorType.ExpectedListActualEmpty:
-            throw new CustomError("Empty List");
+            throw new Error("cannot perform the operation on an empty List");
         case ErrorType.ExpectedVectorActualEmpty:
-            throw new CustomError("Empty Vector");
+            throw new Error("cannot perform the operation on an empty Vector");
         case ErrorType.IndexOutOfBounds:
-            throw new CustomError("Index out of bounds");
+            throw new Error("index out of bounds");
         default:
-            throw new CustomError("Unspecified error")
+            throw new Error("unspecified error")
     }
 }
 
@@ -3098,7 +3098,6 @@ class MyVisitor extends SchemeLikeLVisitor {
     visitStart(ctx) {
         let body = [];
         for (let i = 0; i < ctx.children.length - 1; i++){
-            console.log(ctx.children[i])
             switch (ctx.children[i].constructor) {
                 case SchemeLikeLParser.ExprContext:
                 case SchemeLikeLParser.DefineGlobalVarContext:
@@ -3118,6 +3117,8 @@ class MyVisitor extends SchemeLikeLVisitor {
                 case SchemeLikeLParser.DisplayExprContext:
                 case SchemeLikeLParser.UniExprContext:
                     body.push(this.visit(ctx.children[i]));
+                    break;
+                case TerminalNodeImpl:
                     break;
                 default:
                     throw new Error('Unsupported command type');
@@ -3196,6 +3197,21 @@ class MyVisitor extends SchemeLikeLVisitor {
         return new AST.MultiOpNode(operator, values);
     }
 
+    visitLogExpr(ctx) {
+        let operator = "";
+        let values = [];
+        for (let i = 0; i < ctx.children.length; i++) {
+            let child = ctx.children[i];
+            if (child.constructor === SchemeLikeLParser.LogOperatorExprContext) {
+                operator = this.visit(child);
+            }
+            else if (child.constructor !== TerminalNodeImpl) {
+                values.push(this.visit(child));
+            }
+        }
+        return new AST.LogMultiOpNode(operator, values);
+    }
+
     visitBiExpr(ctx) {
         let operator;
         let left;
@@ -3212,12 +3228,36 @@ class MyVisitor extends SchemeLikeLVisitor {
         return new AST.BiOpNode(operator, left, right);
     }
 
+    visitLogBiExpr(ctx) {
+        let operator;
+        let left;
+        let right;
+        for (let i = 0; i < ctx.children.length; i++) {
+            let child = ctx.children[i];
+            if (child.constructor !== TerminalNodeImpl) {
+                let expr = this.visit(child);
+                if (operator === undefined) operator = expr;
+                else if (left === undefined) left = expr;
+                else right = expr;
+            }
+        }
+        return new AST.LogBiOpNode(operator, left, right);
+    }
+
     visitOperatorExpr(ctx) {
         let operator = "";
         for (let i = 0; i < ctx.children.length; i++) {
             operator += ctx.children[i].symbol.text;
         }
         return new AST.OperatorNode(operator);
+    }
+
+    visitLogOperatorExpr(ctx) {
+        let operator = "";
+        for (let i = 0; i < ctx.children.length; i++) {
+            operator += ctx.children[i].symbol.text;
+        }
+        return new AST.LogOperatorNode(operator);
     }
 
     visitBiOperatorExpr(ctx) {
@@ -3228,12 +3268,28 @@ class MyVisitor extends SchemeLikeLVisitor {
         return new AST.BiOperatorNode(operator);
     }
 
+    visitLogBiOperatorExpr(ctx) {
+        let operator = "";
+        for (let i = 0; i < ctx.children.length; i++) {
+            operator += ctx.children[i].symbol.text;
+        }
+        return new AST.LogBiOperatorNode(operator);
+    }
+
     visitUniOperatorExpr(ctx) {
         let operator = "";
         for (let i = 0; i < ctx.children.length; i++) {
             operator += ctx.children[i].symbol.text;
         }
         return new AST.UniOperatorNode(operator);
+    }
+
+    visitLogUniOperatorExpr(ctx) {
+        let operator = "";
+        for (let i = 0; i < ctx.children.length; i++) {
+            operator += ctx.children[i].symbol.text;
+        }
+        return new AST.LogUniOperatorNode(operator);
     }
 
     visitUniExpr(ctx) {
@@ -3250,12 +3306,24 @@ class MyVisitor extends SchemeLikeLVisitor {
         return new AST.UniOpNode(operator, operand);
     }
 
+    visitLogUniExpr(ctx) {
+        let operator;
+        let operand;
+        for (let i = 0; i < ctx.children.length; i++) {
+            let child = ctx.children[i];
+            if (child.constructor !== TerminalNodeImpl) {
+                let expr = this.visit(child);
+                if (operator === undefined) operator = expr;
+                else operand = expr;
+            }
+        }
+        return new AST.LogUniOpNode(operator, operand);
+    }
+
     visitDefineFnc(ctx) {
         let identifier;
         let body = [];
         let params = [];
-        console.log("visit define fnc")
-        console.log(ctx)
 
         for (let i = 0; i < ctx.children.length; i++){
             let child = ctx.children[i];
@@ -3267,10 +3335,7 @@ class MyVisitor extends SchemeLikeLVisitor {
                     params.push(this.visit(child));
                 }
             } else if (child.constructor !== TerminalNodeImpl) {
-                console.log("ano body")
-                console.log(child)
                 body = this.visit(child);
-                console.log(body)
             }
         }
 
@@ -3307,19 +3372,12 @@ class MyVisitor extends SchemeLikeLVisitor {
 
     visitFncBodyExpr(ctx) {
         let body = [];
+        if (ctx.children === null) return new AST.FncBodyNode(body);
         for (let i = 0; i < ctx.children.length; i++){
             let child = ctx.children[i];
             if (child.constructor !== TerminalNodeImpl) {
                 body.push(this.visit(child));
             }
-
-            // TODO aby sa iba jedno mohlo vratit
-            // } else if (child.constructor === SchemeLikeLParser.CallFncContext ||
-            //         child.constructor === SchemeLikeLParser.ExprContext) {
-            //     if (lastReturnExprIndex === i) body.push(this.visit(child));
-            // } else if (child.constructor !== TerminalNodeImpl) {
-            //     body.push(this.visit(child));
-            // }
         }
         return new AST.FncBodyNode(body);
     }
@@ -3468,8 +3526,11 @@ export function compileToWasm(){
     const visitor = new MyVisitor();
     const ast = visitor.visit(tree);
 
+
+
     generateWasm(ast);
     wasmModule.addGlobal("freeMemIndex", binaryen.i32, true, wasmModule.i32.const(0))
+    wasmModule.addGlobal("startStructMemIndex", binaryen.i32, true, wasmModule.i32.const(0))
 
     const wasmText = wasmModule.emitText();
     console.log(wasmText);
@@ -3490,6 +3551,11 @@ export function compileToWasm(){
 
 
 let exports;
+
+function jsFib(n, a, b) {
+    if (n <= 2) return a;
+    return jsFib( n-1, a+b, a);
+}
 
 export function runWasm(wasmBinary) {
     //TODO ked bezi nanovo, tak sa pamat vymaza, canvas vymaze aj output vymaze, tak?
@@ -3513,19 +3579,30 @@ export function runWasm(wasmBinary) {
 
     WebAssembly.instantiate(wasmBytes, importObject)
         .then(obj => {
+            // console.time('doSomething')
             let result = obj.instance.exports.main();
             exports = obj.instance.exports
+            // console.timeEnd('doSomething')
+
+
+            // console.time('doSomethingFib')
+            // console.log(jsFib(33,1,1))
+            // console.timeEnd('doSomethingFib')
+
             // if (result !== undefined) document.getElementById("output").innerHTML += result;
             // console.log(obj.instance.exports.main());
 
 
 
             // Handle the result as needed
-            console.log("Result:", result);
+            // console.log("Result:", new Float32Array(new Uint32Array([result]).buffer)[0]);
             console.log(mem_f32);
             console.log(mem_i32);
             console.log(mem_i8);
-        })
+        }).catch(error => {
+            document.getElementById("output").innerHTML = error;
+            throw  error;
+    });
 }
 
 
@@ -3533,13 +3610,12 @@ function createCanvasElement(address, width, height) {
     let canvas = document.createElement('canvas');
     canvas.height = height;
     canvas.width = width;
-    // canvas.getContext("2d").fillRect(0,0, 200, 200); //TODO delete this line
     document.getElementById("canvas-container").appendChild(canvas);
-    canvasMap.set(address, canvas);
+    canvasMap.set(address, {canvas: canvas, clickHandler: undefined });
 }
 
 function updateCanvasData(address) {
-    let canvas = canvasMap.get(address);
+    let canvas = canvasMap.get(address).canvas;
     let width = mem_f32[address/4];
     let height = mem_f32[address/4 + 1];
     const image_data = new ImageData( new Uint8ClampedArray(mem_i32.buffer, address + 8,
@@ -3547,9 +3623,14 @@ function updateCanvasData(address) {
     canvas.getContext('2d').putImageData(image_data, 0, 0);
 }
 
+
 function addCanvasOnClickListener(address, fncNum) {
-    let canvas = canvasMap.get(address);
-    canvas.addEventListener('click', (e) => {
+    let canvas = canvasMap.get(address).canvas;
+    let clickHandler = canvasMap.get(address).clickHandler;
+    if (clickHandler) {
+        canvas.removeEventListener('click',  clickHandler);
+    }
+    clickHandler = (e) => {
         const rect = canvas.getBoundingClientRect()
         const x = e.clientX - rect.left
         const y = e.clientY - rect.top
@@ -3557,11 +3638,13 @@ function addCanvasOnClickListener(address, fncNum) {
         let xValue = new Uint32Array(new Float32Array([x]).buffer)[0] & -2;
         let yValue = new Uint32Array(new Float32Array([y]).buffer)[0] & -2;
         Object.entries(exports).at(fncNum).at(1)(xValue, yValue);
-    });
+    };
+    canvasMap.get(address).clickHandler = clickHandler;
+    canvas.addEventListener('click', clickHandler);
 }
 
 function canvasFillText(address, vector, x, y, s) {
-    let canvas = canvasMap.get(address);
+    let canvas = canvasMap.get(address).canvas;
     let text = "";
     let pointer = vector >> 2;
     let length = mem_i32[pointer/4];
@@ -3573,34 +3656,20 @@ function canvasFillText(address, vector, x, y, s) {
     let ctx = canvas.getContext('2d');
     ctx.font = "bold 30px Arial";
     ctx.fillText(text, x_pos, y_pos);
-
 }
 
 
 function generateWasm(ast) {
     init();
     initCanvas();
-    // addInitFunctions()
-   // addTestFunctions()
-    let type = binaryen.none;
+    let type = getNodeReturnType(ast.instructions[ast.instructions.length - 1]);
     let wasmExpressions = [];
-    // let returnType = binaryen.none;
-    for (let i = 0; i < ast.instructions.length; i++){
-        let instType = getNodeReturnType(ast.instructions[i])
-        if (instType !== undefined) type = instType;
+    for (let i = 0; i < ast.instructions.length; i++) {
         let ret = generateExpr(ast.instructions[i])
-
         if (ret !== undefined) {
             wasmExpressions.push(ret);
-            // if (binaryen.getExpressionType(ret) !== binaryen.none) {
-            //     console.log(binaryen.getExpressionType(ret))
-            //     console.log(binaryen.getExpressionType(ret) !== binaryen.none)
-            //     if (returnType === binaryen.none) returnType = binaryen.f32;
-            //     else throw new CustomError("Can't return more than 1 value")
-            // }
         }
     }
-
 
     let mainBlock = wasmModule.block(null, wasmExpressions, binaryen.auto);
 
@@ -3618,6 +3687,18 @@ function init() {
                 )), wasmModule.i32.const(3)),
                  wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualVector)], binaryen.none),
                 wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualList)], binaryen.none))),
+            wasmModule.local.get(0, binaryen.i32)
+        ], binaryen.i32))
+
+    wasmModule.addFunction("checkListTypeAndGetList", binaryen.createType([binaryen.i32]), binaryen.i32, [],
+        wasmModule.block("", [
+            wasmModule.if(
+                wasmModule.i32.ne(wasmModule.i32.and(wasmModule.local.get(0, binaryen.i32), wasmModule.i32.const(3
+                )), wasmModule.i32.const(1)),
+                wasmModule.if(wasmModule.i32.eq(wasmModule.i32.and(wasmModule.local.get(0, binaryen.i32), wasmModule.i32.const(3
+                    )), wasmModule.i32.const(3)),
+                    wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedListActualVector)], binaryen.none),
+                    wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedListActualNumber)], binaryen.none))),
             wasmModule.local.get(0, binaryen.i32)
         ], binaryen.i32))
 
@@ -3686,14 +3767,28 @@ function init() {
             wasmModule.i32.const(2)), wasmModule.i32.const(1)),
         ], binaryen.auto));
 
-    let notNumberError = wasmModule.if(wasmModule.i32.ne(
-            wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(1)),
-            wasmModule.i32.const(0)),
+
+
+    // let notNumberError = wasmModule.if(wasmModule.i32.ne(
+    //         wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(1)),
+    //         wasmModule.i32.const(0)),
+    //     wasmModule.if(wasmModule.i32.eq(
+    //             wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(3)),
+    //             wasmModule.i32.const(3)),
+    //         wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualVector)], binaryen.none),
+    //         wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualList)], binaryen.none)));
+
+    let notNumberError = wasmModule.if(wasmModule.i32.eq(
+        wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(3)),
+        wasmModule.i32.const(3)),
+        wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualVector)], binaryen.none),
         wasmModule.if(wasmModule.i32.eq(
                 wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(3)),
-                wasmModule.i32.const(3)),
-            wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualVector)], binaryen.none),
+                wasmModule.i32.const(1)),
             wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualList)], binaryen.none)));
+
+
+
 
     wasmModule.addFunction("list-ref", binaryen.createType([binaryen.i32, binaryen.i32]), binaryen.i32,
         [binaryen.i32,     //i         2
@@ -4059,11 +4154,11 @@ function initCanvas() {
 function generateCanvasOnClick(node, ctxVars) {
 
     if (node.params.length !== 2 || node.params[1].constructor !== AST.IdentifierNode) {
-        throw new CustomError("Expected two params: canvas, functionName")
+        throw new Error("Expected two params: canvas, functionName")
     }
-    if (wasmModule.getFunction(node.params[1].value) === 0) {
-        throw new CustomError("Function does NOT exists")
-    }
+    // if (wasmModule.getFunction(node.params[1].value) === 0) {
+    //     throw new Error("Function does NOT exists")
+    // }
 
     if (wasmModule.getExport(node.params[1].value) === 0) {
         exportedFunctions.push(node.params[1].value)
@@ -4122,6 +4217,8 @@ function generateExpr(node, ctxVars) {
     switch (node.constructor) {
         case AST.MultiOpNode:
             return generateMultiOpExpr(node, ctxVars);
+        case AST.LogMultiOpNode:
+            return generateLogMultiOpExpr(node, ctxVars);
         case AST.LiteralNode:
             return generateLiteralExpr(node);
         case AST.DefineVarNode:
@@ -4138,6 +4235,8 @@ function generateExpr(node, ctxVars) {
             return generateIfExpr(node, ctxVars);
         case AST.BiOpNode:
             return generateBiOpExpr(node, ctxVars);
+        case AST.LogBiOpNode:
+            return generateLogBiOpExpr(node, ctxVars);
         case AST.LocalFncBodyNode:
             return generateLocalFncBodyExpr(node, ctxVars);
         case AST.FncBodyNode:
@@ -4152,6 +4251,8 @@ function generateExpr(node, ctxVars) {
             return generateDisplayExpr(node, ctxVars);
         case AST.UniOpNode:
             return generateUniOpExpr(node, ctxVars);
+        case AST.LogUniOpNode:
+            return generateLogUniOpExpr(node, ctxVars);
         case AST.VectorNode:
             return generateVectorExpr(node, ctxVars);
         default:
@@ -4170,7 +4271,7 @@ function generateIdentifierValue(node, ctxVars){
     if (wasmModule.getGlobal(node.value) !== 0) {
         return wasmModule.global.get(node.value, binaryen.i32);
     }
-    throw new CustomError("Unbound variable: " + node.value);
+    throw new Error("Unbound variable: " + node.value);
 }
 
 function generateDefineFuncExpr(node, ctxVars) {
@@ -4180,7 +4281,7 @@ function generateDefineFuncExpr(node, ctxVars) {
     for (let i = 0; i < node.params.length; i++){
         let param = node.params[i].value;
         if (ctxVars.includes(param)) {
-            throw new CustomError("The identifier '" + param +"' is already defined in the scope");
+            throw new Error("The identifier '" + param +"' is already defined in the scope");
         }
         ctxVars.push(param);
     }
@@ -4191,53 +4292,21 @@ function generateDefineFuncExpr(node, ctxVars) {
     }
     let paramsType = binaryen.createType(type);
 
-
     let varsType = [];
-
     if (node.body.constructor === AST.LocalFncBodyNode) {
         for (let i = 0; i < node.body.vars.length; i++) {
             varsType.push(binaryen.i32);
         }
     }
 
-    let fncType = analyzeTypeOfFunction(node);
+    let fncType = getNodeReturnType(node.body, ctxVars);
     let fncRef = wasmModule.addFunction(node.identifier.value, paramsType, fncType, varsType, wasmModule.block("", [], binaryen.auto));
-
     let body = generateExpr(node.body, ctxVars);
 
     binaryen.Function.setBody(fncRef , body)
 }
 
-function analyzeTypeOfFunction(node) {
-    let type = binaryen.none;
-
-    //kvoli mainu
-    if (Array.isArray(node)) {
-        for (let i = node.length - 1; i > -1; i--) {
-            if (getNodeReturnType(node[i]) !== undefined) return binaryen.i32;
-        }
-        return type;
-    }
-
-    if (node.constructor === AST.CallLambdaFuncNode) {
-        return binaryen.i32
-    }
-    let body = node.body.constructor === AST.LocalFncBodyNode ? node.body.fncBody.body  : node.body.body;
-    console.log("body")
-    console.log(body)
-    for (let i = body.length - 1; i > -1; i--) {
-        if (body[i].constructor === AST.CallFuncNode && node.params.includes(body[i].identifier.value)) {
-            return binaryen.i32
-        }
-        if (getNodeReturnType(body[i]) !== undefined) return binaryen.i32;
-    }
-    console.log(type)
-    return type;
-}
-
-function getNodeReturnType(node) {
-    console.log("returnType")
-    console.log(node)
+function getNodeReturnType(node, ctxVars) {
     if (node.constructor === AST.LiteralNode ||
         node.constructor === AST.MultiOpNode ||
         node.constructor === AST.UniOpNode ||
@@ -4246,34 +4315,35 @@ function getNodeReturnType(node) {
         node.constructor === AST.ListNode ||
         node.constructor === AST.VectorNode ) {
         return binaryen.i32
-    }
-    else if (node.constructor === AST.CallFuncNode) {
+    } else if (node.constructor === AST.DisplayNode ||
+        node.constructor === AST.SetNode) {
+        return binaryen.none;
+    } else if (node.constructor === AST.CallFuncNode) {
         let funRef = wasmModule.getFunction(node.identifier.value);
         if (funRef !== 0) {
-            if (binaryen.getFunctionInfo(funRef).results === 2 || binaryen.getFunctionInfo(funRef).results === 4) return binaryen.i32
+            if (binaryen.getFunctionInfo(funRef).results === 2 || binaryen.getFunctionInfo(funRef).results === 4 ||
+                binaryen.getFunctionInfo(funRef).results === 3 || binaryen.getFunctionInfo(funRef).results === 1) return binaryen.i32
+            return binaryen.none;
         }
-    }
-    else if (node.constructor === AST.IfNode) {
-        console.log("returniF")
-        console.log(node)
-        let ifTrueType = getNodeReturnType(node.ifTrue);
-        let ifFalseType = node.ifFalse !== undefined ? getNodeReturnType(node.ifFalse) : undefined;
-        console.log(ifTrueType)
-        console.log(ifFalseType)
-        if (ifTrueType !== undefined) return binaryen.i32;
-        else if (ifFalseType !== undefined) return binaryen.i32;
+        if (ctxVars && ctxVars.includes(node.identifier.value)) return binaryen.i32 //lebo lambda
+    } else if (node.constructor === AST.IfNode) {
+        let type = getNodeReturnType(node.ifTrue, ctxVars);
+        if (type === undefined) {type = node.ifFalse !== undefined ?  getNodeReturnType(node.ifFalse, ctxVars) : binaryen.none;}
+        return type;
     }
     else if (node.constructor === AST.BeginNode) {
-        for (let i = 0; i < node.expressions.length; i++) {
-            if (getNodeReturnType(node.expressions[i]) !== undefined) return binaryen.i32;
-        }
+        if (node.expressions.length === 0) return binaryen.none;
+        return getNodeReturnType(node.expressions[node.expressions.length - 1], ctxVars);
+    } else if (node.constructor === AST.FncBodyNode) {
+        if (node.body.length === 0) return binaryen.none;
+        return getNodeReturnType(node.body[node.body.length - 1], ctxVars);
+    } else if (node.constructor === AST.LocalFncBodyNode) {
+        if (node.fncBody.body.length === 0) return binaryen.none;
+        return getNodeReturnType(node.fncBody.body[node.fncBody.body.length - 1], ctxVars);
     }
-
-
 }
 
 function generateLocalFncBodyExpr(node, ctxVars){
-
     let expressions = [];
     let paramsLength;
     if (ctxVars) {
@@ -4292,10 +4362,7 @@ function generateLocalFncBodyExpr(node, ctxVars){
 }
 
 function generateFncBodyExpr(node, ctxVars){
-    let expressions = [];
-    for (let i = 0; i < node.body.length; i++) {
-        expressions.push(generateExpr(node.body[i], ctxVars));
-    }
+    let expressions = generateSequenceExpr(node.body, ctxVars);
     return wasmModule.block("", expressions, binaryen.auto);
 }
 
@@ -4307,15 +4374,25 @@ function generateSetExpr(node, ctxVars) {
     if (wasmModule.getGlobal(node.pair.identifier.value) !== 0) {
         return wasmModule.global.set(node.pair.identifier.value, value);
     }
-    throw new CustomError("Unbound variable " + node.pair.identifier.value);
+    throw new Error("Unbound variable " + node.pair.identifier.value);
 }
 
-function generateBeginExpr(node, ctxVars) {
+function generateSequenceExpr(nodes, ctxVars) {
     let expressions = [];
-    for (let i = 0; i < node.expressions.length; i++) {
-        expressions.push(generateExpr(node.expressions[i], ctxVars));
+    for (let i = 0; i < nodes.length; i++) {
+        if (i !== nodes.length - 1 && getNodeReturnType(nodes[i], ctxVars) === binaryen.i32) {
+            expressions.push(wasmModule.drop(generateExpr(nodes[i], ctxVars)));
+        } else {
+            expressions.push(generateExpr(nodes[i], ctxVars));
+        }
     }
-    return wasmModule.block("", expressions, binaryen.auto);
+    return expressions;
+}
+
+
+function generateBeginExpr(node, ctxVars) {
+    let expressions = generateSequenceExpr(node.expressions, ctxVars);
+    return wasmModule.block("", expressions, getNodeReturnType(node, ctxVars));
 }
 
 
@@ -4333,7 +4410,7 @@ function generateCallFuncExpr(node, ctxVars){
     let paramsType = binaryen.createType(type);
     if (wasmModule.getFunction(node.identifier.value) === 0) {
         if (ctxVars === undefined || !ctxVars.includes(node.identifier.value)) {
-            throw new CustomError("Unbound variable: " + node.identifier.value)
+            throw new Error("Unbound variable: " + node.identifier.value)
         }
         let localVariable = wasmModule.local.get(ctxVars.indexOf(node.identifier.value), wasmModule.i32);
         return wasmModule.call_indirect(tableName, localVariable, operands, paramsType, binaryen.i32) //TODO? result type proste neviem zistit dopredu
@@ -4367,7 +4444,6 @@ function generateDefineGlobalVarExpr(node, ctxVars) {
 
 
 function generateMultiOpExpr(node, params) {
-
     switch (node.operator.value) {
         case '+':
             let resultAdd = wasmModule.f32.reinterpret(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.values[0], params)], binaryen.i32))
@@ -4375,53 +4451,82 @@ function generateMultiOpExpr(node, params) {
                 resultAdd = wasmModule.f32.add(resultAdd,
                     wasmModule.f32.reinterpret(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.values[i], params)], binaryen.i32)));
             }
-            // TODO!!!! moze po upravach byt resultAdd s poslednym bitom rovnym 1? pri klasickych oper nie, ale co nejake ine?
-            return  wasmModule.i32.reinterpret(resultAdd);
-
+            return wasmModule.i32.and(wasmModule.i32.reinterpret(resultAdd), wasmModule.i32.const(-2));
         case '*':
             let resultMul = wasmModule.f32.reinterpret(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.values[0], params)], binaryen.i32))
             for (let i = 1; i < node.values.length; i++) {
                 resultMul = wasmModule.f32.mul(resultMul,
                     wasmModule.f32.reinterpret(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.values[i], params)], binaryen.i32)));
             }
-            return wasmModule.i32.reinterpret(resultMul);
-
+            return wasmModule.i32.and(wasmModule.i32.reinterpret(resultMul), wasmModule.i32.const(-2));
         case '-':
-            //check ak je iba jedno cislo, tak vrat minus
+            if (node.values.length === 1) {
+                return wasmModule.i32.and(
+                    wasmModule.i32.reinterpret(
+                    wasmModule.f32.mul(wasmModule.f32.const(-1),
+                        wasmModule.f32.reinterpret(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.values[0], params)], binaryen.i32)))),
+                    wasmModule.i32.const(-2));
+            }
             let resultSub = wasmModule.f32.reinterpret(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.values[0], params)], binaryen.i32))
             for (let i = 1; i < node.values.length; i++) {
                 resultSub = wasmModule.f32.sub(resultSub,
                     wasmModule.f32.reinterpret(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.values[i], params)], binaryen.i32)));
             }
-            return wasmModule.i32.reinterpret(resultSub);
-
+            return wasmModule.i32.and(wasmModule.i32.reinterpret(resultSub), wasmModule.i32.const(-2));
         case '/':
+            if (node.values.length === 1) {
+                return wasmModule.i32.and(
+                    wasmModule.i32.reinterpret(
+                        wasmModule.f32.div(wasmModule.f32.const(1),
+                            wasmModule.f32.reinterpret(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.values[0], params)], binaryen.i32)))),
+                    wasmModule.i32.const(-2));
+            }
             let resultDiv = wasmModule.f32.reinterpret(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.values[0], params)], binaryen.i32))
             for (let i = 1; i < node.values.length; i++) {
                 resultDiv = wasmModule.f32.div(resultDiv,
                     wasmModule.f32.reinterpret(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.values[i], params)], binaryen.i32)));
             }
-            return wasmModule.i32.reinterpret(resultDiv);
+            return wasmModule.i32.and(wasmModule.i32.reinterpret(resultDiv), wasmModule.i32.const(-2));
+        default:
+            throw new Error('Unsupported operator ' + node.operator.value);
+    }
+}
+
+function generateLogMultiOpExpr(node, params) {
+    switch (node.operator.value) {
         case 'and':
-            let resultAnd = wasmModule.i32.and(generateExpr(node.values[0], params), wasmModule.i32.const(1));
-            for (let i = 1; i < node.values.length; i++) {
-                resultAnd = wasmModule.i32.and(resultAnd, generateExpr(node.values[i], params))
+            let resultAnd = wasmModule.i32.const(1);
+            for (let i = 0; i < node.values.length; i++) {
+                resultAnd = wasmModule.i32.and(resultAnd, generateExpr(node.values[i], params));
             }
             return resultAnd;
         case 'or':
-            let resultOr = wasmModule.i32.or(generateExpr(node.values[0], params), wasmModule.i32.const(0));
-            for (let i = 1; i < node.values.length; i++) {
-                resultOr = wasmModule.i32.or(resultOr, generateExpr(node.values[i], params))
+            let resultOr = wasmModule.i32.const(0);
+            for (let i = 0; i < node.values.length; i++) {
+                resultOr = wasmModule.i32.or(resultOr, generateExpr(node.values[i], params));
             }
             return resultOr;
-
-
         default:
-            throw new Error('Unsupported operator');
+            throw new Error('Unsupported operator ' + node.operator.value);
     }
 }
 
 function generateBiOpExpr(node, ctxVars) {
+    switch (node.operator.value) {
+        case 'quotient':
+            return wasmModule.i32.and(wasmModule.i32.reinterpret(
+                wasmModule.f32.trunc(
+                wasmModule.f32.div(
+                wasmModule.f32.reinterpret(
+                wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.left, ctxVars)], binaryen.i32)),
+                wasmModule.f32.reinterpret(
+                wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.right, ctxVars)], binaryen.i32))))), wasmModule.i32.const(-2));
+        default:
+            throw new Error('Unsupported operator ' + node.operator.value);
+    }
+}
+
+function generateLogBiOpExpr(node, ctxVars) {
     switch (node.operator.value) {
         case '=':
             return wasmModule.i32.eq(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.left, ctxVars)], binaryen.i32),
@@ -4442,32 +4547,14 @@ function generateBiOpExpr(node, ctxVars) {
         case '!=':
             return wasmModule.i32.ne(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.left, ctxVars)], binaryen.i32),
                 wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.right, ctxVars)], binaryen.i32));
-        case 'quotient':
-            return wasmModule.i32.and(wasmModule.i32.reinterpret(
-                wasmModule.f32.trunc(
-                wasmModule.f32.div(
-                wasmModule.f32.reinterpret(
-                wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.left, ctxVars)], binaryen.i32)),
-                wasmModule.f32.reinterpret(
-                wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.right, ctxVars)], binaryen.i32))))), wasmModule.i32.const(-2));
         default:
-            throw new Error('Unsupported operator');
+            throw new Error('Unsupported operator ' + node.operator.value);
     }
 }
 
 function generateUniOpExpr(node, ctxVars) {
 
     switch (node.operator.value) {
-        case 'null?':
-            //TODO zamysli sa, aby nebolo 2x volanie generate (pti multi pouzita fkcia checkTypeValue.. )
-            return wasmModule.block("", [
-                wasmModule.if(wasmModule.i32.ne(
-                        wasmModule.i32.and(generateExpr(node.operand,ctxVars), wasmModule.i32.const(1)),
-                        wasmModule.i32.const(1)),
-                    wasmModule.call("error", [wasmModule.i32.const(10)], binaryen.none)),
-                wasmModule.i32.eq(generateExpr(node.operand,ctxVars), wasmModule.i32.const(-3))
-
-            ], binaryen.auto);
         case 'truncate':
             return wasmModule.i32.and(
             wasmModule.i32.reinterpret(
@@ -4501,6 +4588,15 @@ function generateUniOpExpr(node, ctxVars) {
     }
 }
 
+function generateLogUniOpExpr(node, ctxVars) {
+    switch (node.operator.value) {
+        case 'null?':
+            return wasmModule.i32.eq(wasmModule.call("checkListTypeAndGetList", [generateExpr(node.operand,ctxVars)], binaryen.i32),
+                wasmModule.i32.const(-3));
+        default:
+            throw new Error('Unsupported operator');
+    }
+}
 
 function generateIfExpr(node, ctxVars) {
     let condition = generateExpr(node.condition, ctxVars)
@@ -4514,13 +4610,15 @@ function generateVectorExpr(node, ctxVars) {
     }
     let values = [];
 
+    values.push(saveVectorBody(node,ctxVars))
     values.push(
         wasmModule.i32.or(
-        wasmModule.i32.shl(
-            wasmModule.global.get("freeMemIndex", binaryen.i32),
-            wasmModule.i32.const(2)), wasmModule.i32.const(3)))
-
-    values.push(saveVectorBody(node,ctxVars))
+            wasmModule.i32.shl(
+                wasmModule.i32.sub(
+                    wasmModule.global.get("freeMemIndex", binaryen.i32),
+                    wasmModule.i32.mul(wasmModule.i32.const(4), wasmModule.i32.const(node.values.length + 1))
+                ),
+                wasmModule.i32.const(2)), wasmModule.i32.const(3)))
 
     return wasmModule.block("", values, binaryen.i32);
 }
@@ -4541,7 +4639,7 @@ function saveVectorBody(node, ctxVars) {
     }
     values.push(wasmModule.global.set("freeMemIndex",
         wasmModule.i32.add(wasmModule.global.get("freeMemIndex", binaryen.i32), wasmModule.i32.const(offset))));
-    return wasmModule.block("", values, binaryen.i32);
+    return wasmModule.block("", values, binaryen.auto);
 }
 
 
@@ -4551,11 +4649,11 @@ function generateListExpr(node, ctxVars) {
     }
 
     let values = [];
-    values.push(wasmModule.i32.or(
+    values.push(wasmModule.global.set("startStructMemIndex",wasmModule.i32.or(
         wasmModule.i32.shl(
             wasmModule.global.get("freeMemIndex", binaryen.i32),
             wasmModule.i32.const(2)),
-        wasmModule.i32.const(1)))
+        wasmModule.i32.const(1))))
 
     function getPointerInc(hNode) {
         let num = 0;
@@ -4578,7 +4676,7 @@ function generateListExpr(node, ctxVars) {
 
         for (let i = 0; i < hNode.values.length; i++) {
             if (hNode.values[i].constructor === AST.CallFuncNode && wasmModule.getFunction(hNode.values[i].identifier.value) === 0) {
-                throw new CustomError("No value provided");
+                throw new Error("No value provided");
             }
 
             if (hNode.values[i].constructor === AST.ListNode || hNode.values[i].constructor === AST.VectorNode) {
@@ -4612,13 +4710,15 @@ function generateListExpr(node, ctxVars) {
     }
 
     values.push(...helper(node))
+    values.push(wasmModule.global.get("startStructMemIndex", binaryen.i32));
+
     return wasmModule.block("", values, binaryen.i32)
 }
 
 
 function generateDisplayExpr(node, ctxVars) {
 
-    //co ked budem chciet vypisat funkciu co nic nevracia?
+    //co ked budem chciet vypisat funkciu co nic nevracia? vrat undef
     return wasmModule.call("display", [generateExpr(node.value, ctxVars)], binaryen.none);
 
 }

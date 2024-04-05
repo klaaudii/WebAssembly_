@@ -23,6 +23,15 @@ export default class SchemeLikeLListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
+	// Enter a parse tree produced by SchemeLikeLParser#logExpr.
+	enterLogExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by SchemeLikeLParser#logExpr.
+	exitLogExpr(ctx) {
+	}
+
+
 	// Enter a parse tree produced by SchemeLikeLParser#defineGlobalVar.
 	enterDefineGlobalVar(ctx) {
 	}
@@ -41,6 +50,42 @@ export default class SchemeLikeLListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
+	// Enter a parse tree produced by SchemeLikeLParser#fncBodyExpr.
+	enterFncBodyExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by SchemeLikeLParser#fncBodyExpr.
+	exitFncBodyExpr(ctx) {
+	}
+
+
+	// Enter a parse tree produced by SchemeLikeLParser#localFncBodyExpr.
+	enterLocalFncBodyExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by SchemeLikeLParser#localFncBodyExpr.
+	exitLocalFncBodyExpr(ctx) {
+	}
+
+
+	// Enter a parse tree produced by SchemeLikeLParser#varPairExpr.
+	enterVarPairExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by SchemeLikeLParser#varPairExpr.
+	exitVarPairExpr(ctx) {
+	}
+
+
+	// Enter a parse tree produced by SchemeLikeLParser#beginExpr.
+	enterBeginExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by SchemeLikeLParser#beginExpr.
+	exitBeginExpr(ctx) {
+	}
+
+
 	// Enter a parse tree produced by SchemeLikeLParser#biExpr.
 	enterBiExpr(ctx) {
 	}
@@ -50,12 +95,30 @@ export default class SchemeLikeLListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
+	// Enter a parse tree produced by SchemeLikeLParser#logBiExpr.
+	enterLogBiExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by SchemeLikeLParser#logBiExpr.
+	exitLogBiExpr(ctx) {
+	}
+
+
 	// Enter a parse tree produced by SchemeLikeLParser#uniExpr.
 	enterUniExpr(ctx) {
 	}
 
 	// Exit a parse tree produced by SchemeLikeLParser#uniExpr.
 	exitUniExpr(ctx) {
+	}
+
+
+	// Enter a parse tree produced by SchemeLikeLParser#logUniExpr.
+	enterLogUniExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by SchemeLikeLParser#logUniExpr.
+	exitLogUniExpr(ctx) {
 	}
 
 
@@ -86,21 +149,21 @@ export default class SchemeLikeLListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
-	// Enter a parse tree produced by SchemeLikeLParser#beginExpr.
-	enterBeginExpr(ctx) {
-	}
-
-	// Exit a parse tree produced by SchemeLikeLParser#beginExpr.
-	exitBeginExpr(ctx) {
-	}
-
-
 	// Enter a parse tree produced by SchemeLikeLParser#operatorExpr.
 	enterOperatorExpr(ctx) {
 	}
 
 	// Exit a parse tree produced by SchemeLikeLParser#operatorExpr.
 	exitOperatorExpr(ctx) {
+	}
+
+
+	// Enter a parse tree produced by SchemeLikeLParser#logOperatorExpr.
+	enterLogOperatorExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by SchemeLikeLParser#logOperatorExpr.
+	exitLogOperatorExpr(ctx) {
 	}
 
 
@@ -113,6 +176,15 @@ export default class SchemeLikeLListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
+	// Enter a parse tree produced by SchemeLikeLParser#logBiOperatorExpr.
+	enterLogBiOperatorExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by SchemeLikeLParser#logBiOperatorExpr.
+	exitLogBiOperatorExpr(ctx) {
+	}
+
+
 	// Enter a parse tree produced by SchemeLikeLParser#uniOperatorExpr.
 	enterUniOperatorExpr(ctx) {
 	}
@@ -122,30 +194,12 @@ export default class SchemeLikeLListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
-	// Enter a parse tree produced by SchemeLikeLParser#localFncBodyExpr.
-	enterLocalFncBodyExpr(ctx) {
+	// Enter a parse tree produced by SchemeLikeLParser#logUniOperatorExpr.
+	enterLogUniOperatorExpr(ctx) {
 	}
 
-	// Exit a parse tree produced by SchemeLikeLParser#localFncBodyExpr.
-	exitLocalFncBodyExpr(ctx) {
-	}
-
-
-	// Enter a parse tree produced by SchemeLikeLParser#fncBodyExpr.
-	enterFncBodyExpr(ctx) {
-	}
-
-	// Exit a parse tree produced by SchemeLikeLParser#fncBodyExpr.
-	exitFncBodyExpr(ctx) {
-	}
-
-
-	// Enter a parse tree produced by SchemeLikeLParser#varPairExpr.
-	enterVarPairExpr(ctx) {
-	}
-
-	// Exit a parse tree produced by SchemeLikeLParser#varPairExpr.
-	exitVarPairExpr(ctx) {
+	// Exit a parse tree produced by SchemeLikeLParser#logUniOperatorExpr.
+	exitLogUniOperatorExpr(ctx) {
 	}
 
 

@@ -6,17 +6,6 @@
 <script src="./ace/ace.js"></script>
 <script src="./ace/ext-language_tools.js"></script>
 
-<!--(fill-rect (create-canvas 512 512) 0 0 20 20 (color 225 0 225 225))-->
-
-<!--(define v (vector 1 2 3))-->
-<!--(define v2 (vector 4 5 6 ))-->
-<!--(define v3 (vector 4 5 6 7))-->
-<!--(define canvas (create-canvas 512 512))-->
-<!--(define canvas2 (create-canvas 512 512))-->
-<!--(fill-rect canvas 0 0 20 20 (color 0 0 0 255))-->
-<!--(fill-rect canvas 0 10 20 20 (color 255 0 0 255))-->
-
-
 <style>
     body {
         margin: 0;
@@ -90,26 +79,18 @@
 
 <body>
 
-
-<!--(fill-arc board 150 50 40 white)-->
-<!--(fill-arc board 250 50 40 white)-->
-<!--(fill-arc board 350 50 40 white)-->
-<!--(fill-arc board 450 50 40 (color 255 0 0 200))-->
-<!--(fill-arc board 450 50 34 red)-->
-
 <div id="editor-container">
     <div id="editor">
 
 
 
 (define board-state (list (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0)))
-(define n-rows 7)
 
 
-(define red (color 255 0 0 255))
-(define white (color 255 255 255 255))
+(define red (color 220 0 0 255))
+(define bg (color 0 0 180 225))
 (define blue (color 0 0 200 255))
-(define yellow (color 255 255 0 255))
+(define yellow (color 255 220 0 255))
 (define token-radius 45)
 (define board (canvas 700 600))
 (define player 1)
@@ -118,19 +99,15 @@
 (define (draw-token x y col)
 (fill-arc board (+ 50 (* x 100)) (+ 50 (* y 100)) token-radius col))
 
-
 (define (draw-token-row i j)
-(if (<= j 7) (begin (draw-token j i white) (draw-token-row i (+ j 1))) ))
-
+(if (<= j 7) (begin (draw-token j i bg) (draw-token-row i (+ j 1))) ))
 
 (define (draw-token-spaces i)
 (if (<= i 6) (begin (draw-token-row i 0) (draw-token-spaces (+ i 1)))))
 
-
 (define (draw-board)
 (fill-rect board 0 0 700 600 blue)
 (draw-token-spaces 0))
-
 
 (draw-board)
 
@@ -138,18 +115,14 @@
 (define (token-space-is-empty r c)
 (if (> r 5) 0 (if (= (vector-ref (list-ref board-state r) c) 0) 1 0)))
 
-
 (define (get-dir-token-count r c dr dc count)
 (let ((nr (+ r dr)) (nc (+ c dc)))
-
 (if (and (<= nr 5) (>= nr 0) (>= nc 0) (<= nc 6))
 (if (= (vector-ref (list-ref board-state r) c) (vector-ref (list-ref board-state nr) nc))
-
 (get-dir-token-count nr nc dr dc (+ 1 count))  count ) count)))
 
 (define (check-dir r c dr dc)
 (if (> (+ (get-dir-token-count r c dr dc 0) (get-dir-token-count r c (* -1 dr) (* -1 dc) 0)) 2) 1 0))
-
 
 (define (check-four r c)
 (if (= (check-dir r c 0 1) 1) 1
@@ -160,9 +133,7 @@
 (define (new-game) (set! board-state (list (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0)))
 (set! player 1)
 (draw-board)
-(canvas-onclick board click)
-)
-
+(canvas-onclick board click))
 
 (define (put-token r c)
 (if (= player 1)
@@ -242,11 +213,20 @@
     initEditor()
 
     function compile(){
-        wasmBinary = compileToWasm()
+        try {
+            wasmBinary = compileToWasm();
+        } catch (e) {
+            wasmBinary = undefined;
+            document.getElementById("output").innerHTML = e;
+            throw e;
+        }
+
     }
 
     async function run(){
-        runWasm(wasmBinary)
+        if (wasmBinary !== undefined) {
+            runWasm(wasmBinary)
+        }
     }
 
 </script>

@@ -23,7 +23,7 @@ export default class ConsoleErrorListener extends ErrorListener {
     }
 
     syntaxError(recognizer, offendingSymbol, line, column, msg, e) {
-        console.error("line " + line + ":" + column + " " + msg);
+        throw new Error("line " + line + ":" + column + " " + msg);
     }
 }
 

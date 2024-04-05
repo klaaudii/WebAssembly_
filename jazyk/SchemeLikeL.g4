@@ -1,51 +1,74 @@
 grammar SchemeLikeL;
 
-start: SPACE? (expr | defineGlobalVar | defineFnc | literal | identifier | callFnc | setExpr | listExpr | vectorExpr | displayExpr | uniExpr)+ EOF;
+start: SPACE? (expr | defineGlobalVar | defineFnc | literal | identifier | callFnc | setExpr | listExpr | vectorExpr | displayExpr | uniExpr | ifExpr)+ EOF;
 
-expr: SPACE? PSTART SPACE? operatorExpr (SPACE (expr | literal | identifier | callFnc | uniExpr | biExpr ))+ SPACE? PEND SPACE?;
-defineGlobalVar: SPACE? PSTART SPACE? 'define' SPACE identifier (SPACE (expr | literal | identifier | callFnc | vectorExpr | listExpr))+ SPACE? PEND SPACE?;
-defineFnc: SPACE? PSTART SPACE? 'define' SPACE
-        ((PSTART identifier (SPACE identifier)* SPACE? PEND SPACE? (fncBodyExpr | localFncBodyExpr) PEND) |
+expr: SPACE? PSTART SPACE? operatorExpr (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr )+ SPACE? PEND SPACE?;
+logExpr: SPACE? PSTART SPACE? logOperatorExpr (logUniExpr | logBiExpr)+ SPACE? PEND SPACE?;
+
+defineGlobalVar: SPACE? PSTART SPACE? 'define' SPACE identifier
+    ((SPACE identifier) | (SPACE literal) | expr | callFnc | vectorExpr | listExpr | uniExpr | biExpr ) SPACE? PEND SPACE?;
+
+defineFnc: SPACE? PSTART SPACE? 'define' SPACE?
+        ((PSTART SPACE? identifier (SPACE identifier)* SPACE? PEND (fncBodyExpr | localFncBodyExpr) PEND) |
         (identifier SPACE? PSTART SPACE? 'lambda' SPACE? PSTART SPACE? identifier? (SPACE identifier)* SPACE? PEND
         SPACE? fncBodyExpr PEND PEND));
-biExpr: SPACE? PSTART SPACE? biOperatorExpr SPACE (biExpr | expr | literal | identifier | callFnc | uniExpr) SPACE
-        (biExpr | expr | literal | identifier | callFnc) SPACE? PEND SPACE?;
-uniExpr: SPACE? PSTART SPACE? uniOperatorExpr SPACE (literal | identifier | expr | callFnc) SPACE? PEND SPACE?;
 
+fncBodyExpr: SPACE? (expr | biExpr | uniExpr | (SPACE literal) | (SPACE identifier) | callFnc | ifExpr | setExpr
+            | listExpr | displayExpr | vectorExpr | beginExpr)* SPACE?;
 
-callFnc: SPACE? PSTART SPACE? identifier (SPACE (expr | identifier | literal  | callFnc | callLambdaFnc | listExpr | vectorExpr))* SPACE? PEND SPACE?;
-callLambdaFnc: SPACE? PSTART SPACE? 'lambda' SPACE? PSTART SPACE? identifier? (SPACE identifier)* SPACE? PEND
-                       SPACE? ((expr | callFnc) SPACE?)+ PEND SPACE?;
-ifExpr: SPACE? PSTART SPACE? 'if' SPACE (expr | biExpr | literal | identifier | callFnc | uniExpr)
-        SPACE? ((expr | literal | identifier | callFnc | setExpr | ifExpr | displayExpr ) | beginExpr)
-        (SPACE? ((expr | literal | identifier | callFnc | setExpr | ifExpr | displayExpr ) | beginExpr))? SPACE? PEND SPACE?;
-
-beginExpr: SPACE? PSTART SPACE? 'begin' SPACE?  (expr | literal | identifier | callFnc | setExpr | displayExpr | ifExpr)+  SPACE? PEND SPACE?;
-
-operatorExpr: OPERATOR;
-biOperatorExpr: BIOPERATOR;
-uniOperatorExpr: UNIOPERATOR;
-localFncBodyExpr: SPACE? PSTART SPACE? 'let' SPACE? PSTART SPACE? ((PSTART SPACE? varPairExpr SPACE? PEND) SPACE?)* PEND
+localFncBodyExpr: SPACE? PSTART SPACE? 'let' SPACE? PSTART SPACE? ((PSTART  varPairExpr  PEND) SPACE?)* PEND
                SPACE? fncBodyExpr SPACE? PEND SPACE?;
 
-fncBodyExpr: SPACE? ((expr | callFnc | ifExpr | setExpr  | listExpr | displayExpr | vectorExpr) SPACE?)+ SPACE?;
-varPairExpr: SPACE? identifier SPACE (expr | literal | identifier | callFnc | vectorExpr | listExpr | uniExpr | biExpr) SPACE?;
+varPairExpr: SPACE? identifier (expr | (SPACE literal) | (SPACE identifier) | callFnc | vectorExpr | listExpr | uniExpr | biExpr) SPACE?;
+
+beginExpr: SPACE? PSTART SPACE? 'begin' (expr | (SPACE literal) | (SPACE identifier) | callFnc | setExpr | displayExpr
+           | ifExpr | vectorExpr | listExpr | uniExpr | biExpr)*  SPACE? PEND SPACE?;
+
+biExpr: SPACE? PSTART SPACE? biOperatorExpr (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr )
+        (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr ) SPACE? PEND SPACE?;
+
+logBiExpr: SPACE? PSTART SPACE? logBiOperatorExpr (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr )
+         (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr ) SPACE? PEND SPACE?;
+
+uniExpr: SPACE? PSTART SPACE? uniOperatorExpr (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr ) SPACE? PEND SPACE?;
+
+logUniExpr: SPACE? PSTART SPACE? logUniOperatorExpr (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr ) SPACE? PEND SPACE?;
+
+
+callFnc: SPACE? PSTART SPACE? identifier (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr | callLambdaFnc)* SPACE? PEND SPACE?;
+
+
+callLambdaFnc: SPACE? PSTART SPACE? 'lambda' SPACE? PSTART SPACE? identifier? (SPACE identifier)* SPACE? PEND
+                       SPACE? ((expr | callFnc) SPACE?)+ PEND SPACE?;
+
+ifExpr: SPACE? PSTART SPACE? 'if' (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr | logExpr | logBiExpr | logUniExpr )
+        SPACE? (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr |setExpr | displayExpr )
+        (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr |setExpr | displayExpr )? SPACE? PEND SPACE?;
+
+operatorExpr: OPERATOR;
+logOperatorExpr: LOGOPERATOR;
+biOperatorExpr: BIOPERATOR;
+logBiOperatorExpr: LOGBIOPERATOR;
+uniOperatorExpr: UNIOPERATOR;
+logUniOperatorExpr: LOGUNIOPERATOR;
 
 setExpr: SPACE? PSTART SPACE? 'set!' SPACE varPairExpr SPACE? PEND SPACE?;
 
-vectorExpr: SPACE? PSTART SPACE? 'vector' (SPACE (literal | identifier | expr))* SPACE? PEND SPACE? ;
+vectorExpr: SPACE? PSTART SPACE? 'vector' (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr )* SPACE? PEND SPACE? ;
 
-listExpr: SPACE? PSTART SPACE? 'list' (SPACE (literal | identifier | vectorExpr | listExpr  | expr))* SPACE? PEND SPACE? ;
+listExpr: SPACE? PSTART SPACE? 'list' (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr )* SPACE? PEND SPACE? ;
 
-displayExpr: SPACE? PSTART SPACE? 'display' SPACE (literal | identifier | vectorExpr | listExpr | callFnc | expr | ifExpr | uniExpr | biExpr ) SPACE? PEND SPACE? ;
+displayExpr: SPACE? PSTART SPACE? 'display' (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr ) SPACE? PEND SPACE? ;
 
-
-literal: FLOAT | INT | NFLOAT | NINT   ;
+literal: FLOAT | INT | NFLOAT | NINT;
 identifier: VARIABLE;
 
-OPERATOR: [-+*/] | 'and' | 'or';
-BIOPERATOR: '=' | '<=' | '>=' | '<' | '>' | '!=' | 'quotient';
-UNIOPERATOR: 'null?' | 'floor' | 'round' | 'ceiling' | 'truncate';
+OPERATOR: [-+*/];
+LOGOPERATOR:  'and' | 'or';
+BIOPERATOR: 'quotient';
+LOGBIOPERATOR: '=' | '<=' | '>=' | '<' | '>' | '!=';
+UNIOPERATOR: 'floor' | 'round' | 'ceiling' | 'truncate';
+LOGUNIOPERATOR: 'null?';
 VARIABLE: [a-zA-Z][a-zA-Z-!]*[0-9]*;
 PSTART: '(';
 PEND: ')';

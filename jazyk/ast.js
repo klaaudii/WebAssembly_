@@ -36,7 +36,26 @@ export class MultiOpNode extends ASTNode {
     }
 }
 
+export class LogMultiOpNode extends ASTNode {
+    constructor(operator, values) {
+        // super('MULTI_OP_NODE');
+        super();
+        this.operator = operator
+        this.values = values;
+    }
+}
+
 export class BiOpNode extends ASTNode {
+    constructor(operator, left, right) {
+        // super('MULTI_OP_NODE');
+        super();
+        this.operator = operator
+        this.left = left;
+        this.right = right;
+    }
+}
+
+export class LogBiOpNode extends ASTNode {
     constructor(operator, left, right) {
         // super('MULTI_OP_NODE');
         super();
@@ -54,7 +73,22 @@ export class UniOpNode extends ASTNode {
     }
 }
 
+export class LogUniOpNode extends ASTNode {
+    constructor(operator, operand) {
+        super();
+        this.operator = operator
+        this.operand = operand;
+    }
+}
+
 export class OperatorNode extends ASTNode {
+    constructor(value) {
+        super();
+        this.value = value
+    }
+}
+
+export class LogOperatorNode extends ASTNode {
     constructor(value) {
         super();
         this.value = value
@@ -68,12 +102,27 @@ export class BiOperatorNode extends ASTNode {
     }
 }
 
+export class LogBiOperatorNode extends ASTNode {
+    constructor(value) {
+        super();
+        this.value = value
+    }
+}
+
 export class UniOperatorNode extends ASTNode {
     constructor(value) {
         super();
         this.value = value
     }
 }
+
+export class LogUniOperatorNode extends ASTNode {
+    constructor(value) {
+        super();
+        this.value = value
+    }
+}
+
 
 export class VectorNode extends ASTNode {
     constructor(values) {
