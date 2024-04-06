@@ -1,6 +1,6 @@
 grammar SchemeLikeL;
 
-start: (SPACE? (expr | defineGlobalVar | defineFnc | literal | identifier | callFnc | setExpr | listExpr | vectorExpr | displayExpr | uniExpr | ifExpr | beginExpr))+ EOF;
+start: (SPACE? (expr | defineGlobalVar | defineFnc | literal | identifier | callFnc | setExpr | listExpr | vectorExpr | displayExpr | uniExpr | exportExpr | ifExpr | beginExpr))+ EOF;
 
 expr: SPACE? PSTART SPACE? operatorExpr (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr )+ SPACE? PEND SPACE?;
 logExpr: SPACE? PSTART SPACE? logOperatorExpr (logUniExpr | logBiExpr)+ SPACE? PEND SPACE?;
@@ -59,13 +59,15 @@ vectorExpr: SPACE? PSTART SPACE? 'vector' (biExpr | expr | (SPACE literal) | (SP
 listExpr: SPACE? PSTART SPACE? 'list' (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr )* SPACE? PEND SPACE? ;
 
 displayExpr: SPACE? PSTART SPACE? 'display' (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr | ifExpr | vectorExpr | listExpr ) SPACE? PEND SPACE? ;
+exportExpr: SPACE? PSTART SPACE? 'export' SPACE identifier SPACE? PEND SPACE?;
+
 
 literal: FLOAT | INT | NFLOAT | NINT;
 identifier: VARIABLE;
 
 OPERATOR: [-+*/];
 LOGOPERATOR:  'and' | 'or';
-BIOPERATOR: 'quotient';
+BIOPERATOR: 'quotient' | 'remainder';
 LOGBIOPERATOR: '=' | '<=' | '>=' | '<' | '>' | '!=';
 UNIOPERATOR: 'floor' | 'round' | 'ceiling' | 'truncate';
 LOGUNIOPERATOR: 'null?';

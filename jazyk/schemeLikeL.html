@@ -79,16 +79,37 @@
 
 <body>
 
+
+<!--(define (factorial n)-->
+<!--(if (= n 0)-->
+<!--1-->
+<!--(* n (factorial (- n 1)))))-->
+
+
+<!--(define (sum-of-factorial-of-digits num acc)-->
+<!--(if (= num 0)-->
+<!--acc-->
+<!--(sum-of-factorial-of-digits (quotient num 10) (+ acc (factorial (remainder num 10))))))-->
+
+<!--(define (is-peterson-number n)-->
+<!--(if (= n (sum-of-factorial-of-digits n))  1 0))-->
+
+<!--(display (is-peterson-number 12))-->
+
 <div id="editor-container">
     <div id="editor">
 
 
 
-(define board-state (list (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0)))
-
+(define board-state (list (vector 0 0 0 0 0 0 0)
+                          (vector 0 0 0 0 0 0 0)
+                          (vector 0 0 0 0 0 0 0)
+                          (vector 0 0 0 0 0 0 0)
+                          (vector 0 0 0 0 0 0 0)
+                          (vector 0 0 0 0 0 0 0)))
 
 (define red (color 220 0 0 255))
-(define bg (color 0 0 180 225))
+(define bg (color 0 0 170 255))
 (define blue (color 0 0 200 255))
 (define yellow (color 255 220 0 255))
 (define token-radius 45)
@@ -109,20 +130,19 @@
 (fill-rect board 0 0 700 600 blue)
 (draw-token-spaces 0))
 
-(draw-board)
-
-
 (define (token-space-is-empty r c)
 (if (> r 5) 0 (if (= (vector-ref (list-ref board-state r) c) 0) 1 0)))
 
 (define (get-dir-token-count r c dr dc count)
 (let ((nr (+ r dr)) (nc (+ c dc)))
 (if (and (<= nr 5) (>= nr 0) (>= nc 0) (<= nc 6))
-(if (= (vector-ref (list-ref board-state r) c) (vector-ref (list-ref board-state nr) nc))
-(get-dir-token-count nr nc dr dc (+ 1 count))  count ) count)))
+    (if (= (vector-ref (list-ref board-state r) c)
+        (vector-ref (list-ref board-state nr) nc))
+        (get-dir-token-count nr nc dr dc (+ 1 count)) count) count)))
 
 (define (check-dir r c dr dc)
-(if (> (+ (get-dir-token-count r c dr dc 0) (get-dir-token-count r c (* -1 dr) (* -1 dc) 0)) 2) 1 0))
+(if (> (+ (get-dir-token-count r c dr dc 0)
+(get-dir-token-count r c (* -1 dr) (* -1 dc) 0)) 2) 1 0))
 
 (define (check-four r c)
 (if (= (check-dir r c 0 1) 1) 1
@@ -130,17 +150,34 @@
 (if (= (check-dir r c 1 -1) 1) 1
 (if (= (check-dir r c 1 1) 1) 1 0)))))
 
-(define (new-game) (set! board-state (list (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0) (vector 0 0 0 0 0 0 0)))
+(define (set-start-board-row vec i)
+(if (<= i 6)
+        (begin (vector-set! vec i 0) (set-start-board-row vec (+ i 1)))))
+
+(define (set-start-board board)
+(if (null? board) (begin)
+(begin (set-start-board-row (car board) 0)
+(set-start-board (cdr board)))))
+
+(define (new-game)
+(set-start-board board-state)
 (set! player 1)
 (draw-board)
 (canvas-onclick board click))
 
 (define (put-token r c)
 (if (= player 1)
-(begin (draw-token c r red) (set! player 2) (vector-set! (list-ref board-state r) c 2))
-(begin (draw-token c r yellow) (vector-set! (list-ref board-state r) c 1) (set! player 1)))
-(if (= (check-four r c) 1) (begin (if (= player 2) (fill-text board (vector 82 69 68 32 87 79 78 33) 250 250)
-(fill-text board (vector 89 69 76 76 79 87 32 87 79 78 33) 250 250))
+(begin (draw-token c r red)
+        (set! player 2)
+        (vector-set! (list-ref board-state r) c 2))
+(begin (draw-token c r yellow)
+        (vector-set!
+        (list-ref board-state r) c 1)
+        (set! player 1)))
+(if (= (check-four r c) 1)
+(begin (if (= player 2)
+        (fill-text board (vector 82 69 68 32 87 79 78 33) 250 250)
+        (fill-text board (vector 89 69 76 76 79 87 32 87 79 78 33) 250 250))
 (canvas-onclick board new-game)
 )))
 
@@ -149,19 +186,18 @@
 
 (define (click x y)
 (let ((c (quotient (ceiling x) 100))(r (quotient (ceiling y) 100)))
-(if (and (= (token-space-is-empty r c) 1) (= (token-space-is-empty (+ r 1) c) 0))  (put-token r c))))
+(if (and (= (token-space-is-empty r c) 1) (= (token-space-is-empty (+ r 1) c) 0))
+        (put-token r c))))
 
 (canvas-onclick board click)
 
 
-
-
-
-
+(draw-board)
 
 
     </div>
     <div id="buttons">
+        <button id="download-button" onclick="getWasm()">Download WASM</button>
         <button id="compile-button" onclick="compile()">Compile</button>
         <button id="run-button" onclick="run()">Run</button>
     </div>
@@ -205,16 +241,19 @@
 
 
 
-    import {compileToWasm, runWasm, initEditor} from './main.js';
+    import {compileToWasm, runWasm, initEditor, downloadWasm} from './main.js';
     let wasmBinary;
     window.compile = compile
     window.run = run
+    window.getWasm = getWasm
+    window.onerror = (e) => {document.getElementById("output").innerHTML = e.toString();}
 
     initEditor()
 
     function compile(){
         try {
-            wasmBinary = compileToWasm();
+            let wasm = compileToWasm()
+            wasmBinary = wasm.binary;
         } catch (e) {
             wasmBinary = undefined;
             document.getElementById("output").innerHTML = e;
@@ -223,9 +262,13 @@
 
     }
 
+    function getWasm() {
+        downloadWasm();
+    }
+
     async function run(){
         if (wasmBinary !== undefined) {
-            runWasm(wasmBinary)
+            runWasm(wasmBinary);
         }
     }
 

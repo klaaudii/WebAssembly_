@@ -162,6 +162,12 @@ export default class SchemeLikeLVisitor extends antlr4.tree.ParseTreeVisitor {
 	}
 
 
+	// Visit a parse tree produced by SchemeLikeLParser#exportExpr.
+	visitExportExpr(ctx) {
+	  return this.visitChildren(ctx);
+	}
+
+
 	// Visit a parse tree produced by SchemeLikeLParser#literal.
 	visitLiteral(ctx) {
 	  return this.visitChildren(ctx);

@@ -19,6 +19,15 @@ export class ListNode extends ASTNode {
     }
 }
 
+export class ExportNode extends ASTNode {
+    constructor(identifier) {
+        super();
+        this.identifier = identifier;
+    }
+}
+
+
+
 export class DisplayNode extends ASTNode {
     constructor(value) {
         super();

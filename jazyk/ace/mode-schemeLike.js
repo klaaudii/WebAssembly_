@@ -3,10 +3,10 @@ var oop = require("../lib/oop");
 var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 var SchemeLikeHighlightRules = function () {
     var keywordControl = "let|if|begin";
-    var keywordOperator = "and|or|null?|quotient|floor|round|ceiling|truncate";
+    var keywordOperator = "and|or|null?|quotient|floor|round|ceiling|truncate|remainder";
     // var constantLanguage = "#t|#f";
     var supportFunctions = "display|car|cdr|lambda|set!|list|vector-ref|vector-set!|car-set!|cdr-set!|canvas|" +
-        "fill-rect|fill-arc|color|canvas-onclick|vector|list-ref|fill-text";  //tu dopln grafiku
+        "fill-rect|fill-arc|color|canvas-onclick|vector|list-ref|fill-text|export";  //tu dopln grafiku
     var keywordMapper = this.createKeywordMapper({
         "keyword.control": keywordControl,
         "keyword.operator": keywordOperator,

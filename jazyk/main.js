@@ -3034,6 +3034,7 @@ import SchemeLikeLVisitor from "./SchemeLikeLVisitor.js";
 import binaryen from './binaryen/index.js'
 import * as AST from './ast.js';
 import TerminalNodeImpl from "./antlr4/tree/TerminalNodeImpl.js";
+import * as JSZIP from './jszip.js'
 
 class TypeError extends Error {
     constructor(message) {
@@ -3117,6 +3118,7 @@ class MyVisitor extends SchemeLikeLVisitor {
                 case SchemeLikeLParser.DisplayExprContext:
                 case SchemeLikeLParser.UniExprContext:
                 case SchemeLikeLParser.LiteralContext:
+                case SchemeLikeLParser.ExportExprContext:
                     body.push(this.visit(ctx.children[i]));
                     break;
                 case TerminalNodeImpl:
@@ -3251,6 +3253,14 @@ class MyVisitor extends SchemeLikeLVisitor {
             operator += ctx.children[i].symbol.text;
         }
         return new AST.OperatorNode(operator);
+    }
+
+    visitExportExpr(ctx) {
+        for (let i = 0; i < ctx.children.length; i++) {
+            if (ctx.children[i].constructor === SchemeLikeLParser.IdentifierContext) {
+                return new AST.ExportNode(this.visit(ctx.children[i]));
+            }
+        }
     }
 
     visitLogOperatorExpr(ctx) {
@@ -3414,14 +3424,7 @@ class MyVisitor extends SchemeLikeLVisitor {
     visitCallLambdaFnc(ctx) {
         let params = [];
         let body = [];
-        // let lastReturnExprIndex = 0;
 
-        // for (let i = 0; i < ctx.children.length; i++){
-        //     let child = ctx.children[i];
-        //     if (child.constructor === SchemeLikeLParser.CallFncContext || child.constructor === SchemeLikeLParser.ExprContext) {
-        //         lastReturnExprIndex = i;  //TODO? potom nemozem volat funkcie co nieco nastavia SET! a zaroven vratia (1)
-        //     }
-        // }
         for (let i = 0; i < ctx.children.length; i++){
             let child = ctx.children[i];
             if (child.constructor === SchemeLikeLParser.IdentifierContext) {
@@ -3429,12 +3432,6 @@ class MyVisitor extends SchemeLikeLVisitor {
             } else if (child.constructor !== TerminalNodeImpl) {
                 body = this.visit(child);
             }
-            // else if (child.constructor === SchemeLikeLParser.CallFncContext ||
-            //     child.constructor === SchemeLikeLParser.ExprContext) {
-            //     if (lastReturnExprIndex === i) body.push(this.visit(child));
-            // } else if (child.constructor !== TerminalNodeImpl) {
-            //     body.push(this.visit(child));
-            // }
         }
         return new AST.CallLambdaFuncNode(params, body);
     }
@@ -3545,18 +3542,59 @@ export function compileToWasm(){
     // console.log("optimized wat")
     // console.log(wasmTextOptimized)
 
-    let binary = wasmModule.emitBinary()
+    let binary = wasmModule.emitBinary();
     wasmModule.dispose();
-    return binary;
+    return {binary: binary, text: wasmText};
 }
 
 
 let exports;
 
-function jsFib(n, a, b) {
-    if (n <= 2) return a;
-    return jsFib( n-1, a+b, a);
+export async function downloadWasm() {
+    let wasmData;
+    try {
+        wasmData = compileToWasm()
+    } catch (e) {
+        document.getElementById("output").innerHTML = e;
+        throw e;
+    }
+
+
+    const choice = window.prompt("Please choose an option:\n1. Wasm + Wat + Html template \n2. Wasm\n3. Wat");
+    if (choice === "1") {
+        const zip = new JSZip();
+        zip.file('binary.wasm', wasmData.binary);
+        zip.file('text.wat', wasmData.text)
+        const htmlResponse = await fetch('template.html');
+        const htmlText = await htmlResponse.text();
+        zip.file('index.html', htmlText);
+        zip.generateAsync({type: 'blob'}).then(blob => {
+            const zipBlob = new Blob([blob], {type: 'application/zip'});
+            const zipUrl = URL.createObjectURL(zipBlob);
+            const a = document.createElement('a');
+            a.href = zipUrl;
+            a.download = 'wasm-folder.zip';
+            document.body.appendChild(a);
+            a.click();
+            URL.revokeObjectURL(zipUrl);
+        });
+    } else if (choice === "2" || choice === "3") {
+        const wasmUint8Array = new Uint8Array(wasmData.binary);
+        const wasmBinBlob = new Blob([wasmUint8Array], { type: 'application/wasm' });
+        const wasmTextBlob = new Blob([wasmData.text], { type: 'text/plain' });
+        const wasmURL = URL.createObjectURL(choice === "2" ? wasmBinBlob : wasmTextBlob);
+        const downloadLink = document.createElement('a');
+        downloadLink.href = wasmURL;
+        downloadLink.download = choice === "2" ? 'binary.wasm' : 'text.wat';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        URL.revokeObjectURL(wasmURL);
+    } else {
+        alert("Invalid choice");
+    }
 }
+
+
 
 export function runWasm(wasmBinary) {
     //TODO ked bezi nanovo, tak sa pamat vymaza, canvas vymaze aj output vymaze, tak?
@@ -4260,6 +4298,8 @@ function generateExpr(node, ctxVars) {
             return generateLogUniOpExpr(node, ctxVars);
         case AST.VectorNode:
             return generateVectorExpr(node, ctxVars);
+        case AST.ExportNode:
+            return generateExportExpr(node, ctxVars);
         default:
             throw new Error('Unsupported node type');
     }
@@ -4526,6 +4566,17 @@ function generateBiOpExpr(node, ctxVars) {
                 wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.left, ctxVars)], binaryen.i32)),
                 wasmModule.f32.reinterpret(
                 wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.right, ctxVars)], binaryen.i32))))), wasmModule.i32.const(-2));
+        case 'remainder':
+            return wasmModule.i32.and( wasmModule.i32.reinterpret(wasmModule.f32.convert_s.i32(
+                wasmModule.i32.rem_s(
+                    wasmModule.i32.trunc_s.f32(
+                        wasmModule.f32.reinterpret(
+                            wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.left, ctxVars)], binaryen.i32))),
+                    wasmModule.i32.trunc_s.f32(
+                        wasmModule.f32.reinterpret(
+                            wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.right, ctxVars)], binaryen.i32)))))),
+                wasmModule.i32.const(-2));
+
         default:
             throw new Error('Unsupported operator ' + node.operator.value);
     }
@@ -4722,9 +4773,24 @@ function generateListExpr(node, ctxVars) {
 
 
 function generateDisplayExpr(node, ctxVars) {
-
     //co ked budem chciet vypisat funkciu co nic nevracia? vrat undef
     return wasmModule.call("display", [generateExpr(node.value, ctxVars)], binaryen.none);
 
+}
+
+function generateExportExpr(node, ctxVars) {
+    if (wasmModule.getFunction(node.identifier.value) === 0) {
+        throw new Error("Function " + node.identifier.value + " does NOT exists")
+    }
+    if (wasmModule.getExport(node.identifier.value) === 0) {
+        exportedFunctions.push(node.identifier.value)
+        wasmModule.addFunctionExport(node.identifier.value, convertToCamelCase( node.identifier.value));
+    }
+
+    function convertToCamelCase(name) {
+        const parts = name.split('-');
+        const camelCaseName = parts[0] + parts.slice(1).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
+        return camelCaseName;
+    }
 }
 

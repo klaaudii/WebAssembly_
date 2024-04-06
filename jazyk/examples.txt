@@ -405,3 +405,23 @@ WS: [ \t\r\n]+ -> skip;
 
 (define (l) (g 30) (f) )
 (display (l))
+
+
+/////////////////////////////////////////
+(define (factorial n)
+(if (= n 0) 1
+(* n (factorial (- n 1)))))
+
+
+(define (sum-of-factorial-of-digits num acc)
+(if (= num 0) acc
+(sum-of-factorial-of-digits (quotient num 10)
+    (+ acc (factorial (remainder num 10))))))
+
+(define (is-peterson-number n)
+(if (= n (sum-of-factorial-of-digits n 0))  1 0))
+
+(display (is-peterson-number 145))
+
+(export is-peterson-number)
+//////////////////////////////////////////
