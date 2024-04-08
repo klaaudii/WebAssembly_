@@ -65,7 +65,7 @@ exportExpr: SPACE? PSTART SPACE? 'export' SPACE identifier SPACE? PEND SPACE?;
 literal: FLOAT | INT | NFLOAT | NINT;
 identifier: VARIABLE;
 
-OPERATOR: [-+*/];
+OPERATOR: [-+*/] | '+v';
 LOGOPERATOR:  'and' | 'or';
 BIOPERATOR: 'quotient' | 'remainder';
 LOGBIOPERATOR: '=' | '<=' | '>=' | '<' | '>' | '!=';

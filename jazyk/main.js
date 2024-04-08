@@ -3528,6 +3528,7 @@ export function compileToWasm(){
 
     generateWasm(ast);
     wasmModule.addGlobal("freeMemIndex", binaryen.i32, true, wasmModule.i32.const(0))
+    wasmModule.addGlobalExport("freeMemIndex","freeMemIndex")
     wasmModule.addGlobal("startStructMemIndex", binaryen.i32, true, wasmModule.i32.const(0))
 
     const wasmText = wasmModule.emitText();
@@ -3609,6 +3610,7 @@ export function runWasm(wasmBinary) {
             displayNumber: displayNumber,
             displayList: displayList,
             displayVec: displayVec,
+            displayUndef: displayUndef,
             newline: newline,
             createCanvasElement: createCanvasElement,
             updateCanvasData: updateCanvasData,
@@ -3621,26 +3623,87 @@ export function runWasm(wasmBinary) {
             // console.time('doSomething')
             let result = obj.instance.exports.main();
             exports = obj.instance.exports
+
+            //  VEKTORY EXAMPLE
+            //     (define (f v)
+            //
+            //     (+v v 10)
+            // )
+            //
+            //     (export f)
+            // let size = 100000
+            // let freeMemIndex = exports.freeMemIndex.value;
+            //
+            // mem_i32[freeMemIndex] = size;
+            // for (let i = freeMemIndex + 1; i < freeMemIndex + size + 1; i++) {
+            //     mem_f32[i] = i;
+            // }
+            // // console.log(mem_f32);
+            // console.time('doSomething')
+            // exports.f(3)
             // console.timeEnd('doSomething')
+            // // console.log(mem_f32);
+            //
+            // mem_i32[freeMemIndex] = size;
+            // for (let i = freeMemIndex + 1; i < freeMemIndex + size + 1; i++) {
+            //     mem_f32[i] = i;
+            // }
+            // // console.log(mem_f32);
+            // console.time('doSomethingJs')
+            // for(let i = freeMemIndex + 1; i < freeMemIndex + size + 1; i++) {
+            //     mem_f32[i] = mem_f32[i] + 10;
+            // }
+            // console.timeEnd('doSomethingJs')
+            // // console.log(mem_f32);
+            //
+            // let arr = []
+            // arr.push(size);
+            // for (let i = 1; i < size + 1; i++) {
+            //     arr.push(i);
+            // }
+            // // console.log(arr);
+            // console.time('doSomethingJs2')
+            // for(let i = 1; i < arr.length; i++) {
+            //     arr[i] = arr[i] + 10;
+            // }
+            // console.timeEnd('doSomethingJs2')
+            // // console.log(arr);
 
 
-            // console.time('doSomethingFib')
-            // console.log(jsFib(33,1,1))
-            // console.timeEnd('doSomethingFib')
 
-            // if (result !== undefined) document.getElementById("output").innerHTML += result;
-            // console.log(obj.instance.exports.main());
+            // let canvas = document.createElement("canvas");
+            // document.getElementById("canvas-container").appendChild(canvas)
+            // canvas.height = 500;
+            // canvas.width = 500;
+            // let ctx = canvas.getContext('2d');
+            // const img = new Image();
+            // img.src = "stitch.png";
+            // // ctx.drawImage(img, 0, 0);
+            // img.onload = () => {
+            //     ctx.drawImage(img, 0, 0)
+            //     let imgData = ctx.getImageData(0, 0, 500, 500).data;
+            //     console.log(imgData)
+            //     console.log(imgData.length/4)
+            //     for (let i = 0; i < imgData.length; i++) {
+            //         if (imgData[i] > 0xff101000) imgData[i] = -1
+            //         else imgData[i] = 255
+            //     }
+            //     ctx.putImageData(new ImageData( new Uint8ClampedArray(imgData, 0,
+            //         500*500*4), 500, 500), 0,0);
+            // }
+
 
 
 
             // Handle the result as needed
             // console.log("Result:", new Float32Array(new Uint32Array([result]).buffer)[0]);
+
             console.log(mem_f32);
             console.log(mem_i32);
             console.log(mem_i8);
         }).catch(error => {
             document.getElementById("output").innerHTML = error;
-            throw  error;
+            throw error;
     });
 }
 
@@ -3749,6 +3812,7 @@ function init() {
     wasmModule.addFunctionImport("displayNumber", "env", "displayNumber", binaryen.createType([binaryen.f32]), binaryen.none);
     wasmModule.addFunctionImport("displayList", "env", "displayList", binaryen.createType([binaryen.i32]), binaryen.none);
     wasmModule.addFunctionImport("displayVec", "env", "displayVec", binaryen.createType([binaryen.i32]), binaryen.none);
+    wasmModule.addFunctionImport("displayUndef", "env", "displayUndef", [], binaryen.none);
     wasmModule.addFunctionImport("newline", "env", "newline", binaryen.createType([]), binaryen.none);
 
     wasmModule.addFunction("display", binaryen.createType([binaryen.i32]), binaryen.none, [],
@@ -3811,16 +3875,6 @@ function init() {
         ], binaryen.auto));
 
 
-
-    // let notNumberError = wasmModule.if(wasmModule.i32.ne(
-    //         wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(1)),
-    //         wasmModule.i32.const(0)),
-    //     wasmModule.if(wasmModule.i32.eq(
-    //             wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(3)),
-    //             wasmModule.i32.const(3)),
-    //         wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualVector)], binaryen.none),
-    //         wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualList)], binaryen.none)));
-
     let notNumberError = wasmModule.if(wasmModule.i32.eq(
         wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(3)),
         wasmModule.i32.const(3)),
@@ -3829,8 +3883,6 @@ function init() {
                 wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(3)),
                 wasmModule.i32.const(1)),
             wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualList)], binaryen.none)));
-
-
 
 
     wasmModule.addFunction("list-ref", binaryen.createType([binaryen.i32, binaryen.i32]), binaryen.i32,
@@ -3984,6 +4036,66 @@ function init() {
                     wasmModule.i32.const(4))), wasmModule.local.get(2, binaryen.i32)),
 
         ], binaryen.none));
+
+
+    wasmModule.addFunction("vectorAdd", binaryen.createType([binaryen.i32, binaryen.i32]), binaryen.i32, [
+            binaryen.i32, //vectorBase
+            binaryen.i32, //vectorEnd   3
+            binaryen.i32, //currentPointer 4
+
+        ],
+        wasmModule.block("", [
+
+            // vectorEmptyError,
+            notVectorError,
+            notNumberError,
+
+            wasmModule.if(wasmModule.i32.eq(wasmModule.local.get(0, binaryen.i32), wasmModule.i32.const(-1)),
+                wasmModule.return(wasmModule.local.get(0, binaryen.i32))),
+
+            wasmModule.local.set(2, wasmModule.i32.shr_u(
+                wasmModule.local.get(0, binaryen.i32),
+                wasmModule.i32.const(2))),
+
+            wasmModule.local.set(3, wasmModule.i32.add(
+                wasmModule.i32.add(wasmModule.local.get(2, binaryen.i32),wasmModule.i32.const(4)),
+                    wasmModule.i32.mul(wasmModule.i32.load(0,0, wasmModule.local.get(2, binaryen.i32)),
+                        wasmModule.i32.const(4)))),
+            wasmModule.local.set(4, wasmModule.i32.add(wasmModule.local.get(2, binaryen.i32), wasmModule.i32.const(4))),
+
+            wasmModule.loop("loopAdd",
+                wasmModule.if(wasmModule.i32.ge_s(
+                    wasmModule.i32.add(wasmModule.local.get(4, binaryen.i32), wasmModule.i32.const(16)),
+                    wasmModule.local.get(3, binaryen.i32)), wasmModule.nop(),
+                    wasmModule.block("", [
+                        wasmModule.v128.store(0,0, wasmModule.local.get(4, binaryen.i32),
+                        wasmModule.f32x4.add(
+                        wasmModule.f32x4.splat(wasmModule.f32.reinterpret(wasmModule.local.get(1, binaryen.i32))),
+                        wasmModule.v128.load(0,0, wasmModule.local.get(4, binaryen.i32)))),
+                        wasmModule.local.set(4, wasmModule.i32.add(wasmModule.local.get(4, binaryen.i32), wasmModule.i32.const(16))),
+
+                        wasmModule.br("loopAdd")
+                    ], binaryen.auto))
+            ),
+            // (define v (vector 1 2 3 4 5))
+            // (display (+v v 10))
+
+            wasmModule.loop("loopRest",
+                wasmModule.if(wasmModule.i32.gt_s(
+                        wasmModule.i32.add(wasmModule.local.get(4, binaryen.i32), wasmModule.i32.const(4)),
+                    wasmModule.local.get(3, binaryen.i32)), wasmModule.nop(),
+                    wasmModule.block("", [
+                        wasmModule.f32.store(0,0, wasmModule.local.get(4, binaryen.i32),
+                            wasmModule.f32.add(
+                                wasmModule.f32.reinterpret(wasmModule.local.get(1, binaryen.i32)),
+                                wasmModule.f32.load(0,0, wasmModule.local.get(4, binaryen.i32)))),
+                        wasmModule.local.set(4, wasmModule.i32.add(wasmModule.local.get(4, binaryen.i32), wasmModule.i32.const(4))),
+                        wasmModule.br("loopRest")
+                    ], binaryen.auto))
+                ),
+            wasmModule.local.get(0, binaryen.i32)
+        ], binaryen.auto));
+
 
 }
 
@@ -4253,6 +4365,10 @@ function displayVec(vectorPointer) {
         }
     }
     document.getElementById("output").innerHTML += ")";
+}
+
+function displayUndef() {
+    document.getElementById("output").innerHTML += "#<undef>";
 }
 
 
@@ -4532,6 +4648,8 @@ function generateMultiOpExpr(node, params) {
                     wasmModule.f32.reinterpret(wasmModule.call("checkNumberTypeAndGetValue", [generateExpr(node.values[i], params)], binaryen.i32)));
             }
             return wasmModule.i32.and(wasmModule.i32.reinterpret(resultDiv), wasmModule.i32.const(-2));
+        case '+v':
+            return wasmModule.call("vectorAdd", [generateExpr(node.values[0], params), generateExpr(node.values[1], params)], binaryen.i32);
         default:
             throw new Error('Unsupported operator ' + node.operator.value);
     }
@@ -4773,9 +4891,9 @@ function generateListExpr(node, ctxVars) {
 
 
 function generateDisplayExpr(node, ctxVars) {
-    //co ked budem chciet vypisat funkciu co nic nevracia? vrat undef
+    if (node.value.constructor === AST.CallFuncNode && binaryen.getFunctionInfo(wasmModule.getFunction(node.value.identifier.value)).results === 0)
+        return   wasmModule.block("",   [generateExpr(node.value, ctxVars), wasmModule.call("displayUndef", [], binaryen.none)], binaryen.none);
     return wasmModule.call("display", [generateExpr(node.value, ctxVars)], binaryen.none);
-
 }
 
 function generateExportExpr(node, ctxVars) {
