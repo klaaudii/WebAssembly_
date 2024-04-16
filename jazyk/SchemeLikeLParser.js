@@ -317,7 +317,7 @@ const sharedContextCache = new antlr4.atn.PredictionContextCache();
 export default class SchemeLikeLParser extends antlr4.Parser {
 
     static grammarFileName = "SchemeLikeL.g4";
-    static literalNames = [ null, "'define'", "'lambda'", "'let'", "'begin'", 
+    static literalNames = [ null, "'define'", "'lambda'", "'let*'", "'begin'", 
                             "'if'", "'set!'", "'vector'", "'list'", "'display'", 
                             "'export'", null, null, null, null, null, "'null?'", 
                             null, "'('", "')'" ];

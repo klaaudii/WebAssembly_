@@ -2,7 +2,7 @@ define("ace/mode/schemeLike_highlight_rules",["require","exports","module","ace/
 var oop = require("../lib/oop");
 var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 var SchemeLikeHighlightRules = function () {
-    var keywordControl = "let|if|begin";
+    var keywordControl = "let*|if|begin";
     var keywordOperator = "and|or|null?|quotient|floor|round|ceiling|truncate|remainder";
     // var constantLanguage = "#t|#f";
     var supportFunctions = "display|car|cdr|lambda|set!|list|vector-ref|vector-set!|car-set!|cdr-set!|canvas|" +
@@ -12,7 +12,7 @@ var SchemeLikeHighlightRules = function () {
         "keyword.operator": keywordOperator,
         // "constant.language": constantLanguage,
         "support.function": supportFunctions
-    }, "identifier", true);
+    }, "identifier", false);
     this.$rules =
         {
             "start": [

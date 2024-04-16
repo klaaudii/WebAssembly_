@@ -19,7 +19,7 @@
     #editor-container {
         margin: 15px;
         min-width: 10%;
-        width: 50%;
+        width: 100%;
         height: calc(100% - 30px);
         display: flex;
         flex-direction: column;
@@ -75,6 +75,63 @@
     button:hover {
         background-color: #48914a
     }
+
+
+    .custom-select {
+        position: relative;
+        font-family: Arial;
+    }
+
+    .custom-select select {
+        display: none;
+    }
+
+    .select-selected {
+        background-color: #4CAF50;;
+    }
+
+    .select-selected:after {
+        position: absolute;
+        content: "";
+        top: 14px;
+        right: 10px;
+        width: 0;
+        height: 0;
+        border: 6px solid transparent;
+        border-color: #2d2d2d transparent transparent transparent;
+    }
+
+    .select-selected.select-arrow-active:after {
+        border-color: transparent transparent #2d2d2d transparent;
+        top: 7px;
+    }
+
+    .select-items div,.select-selected {
+        color: #2d2d2d;
+        padding: 8px 16px;
+        border: 1px solid transparent;
+        border-color: transparent transparent rgba(0, 0, 0, 0.1) transparent;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+
+    .select-items {
+        position: absolute;
+        background-color: #4CAF50;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 99;
+        border-radius: 4px;
+    }
+
+    .select-hide {
+        display: none;
+    }
+
+    .select-items div:hover, .same-as-selected {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
 </style>
 
 <body>
@@ -97,11 +154,7 @@
 <!--(display (is-peterson-number 12))-->
 
 <div id="editor-container">
-    <div id="editor">
-
-
-
-(define board-state (list (vector 0 0 0 0 0 0 0)
+    <div id="editor">(define board-state (list (vector 0 0 0 0 0 0 0)
                           (vector 0 0 0 0 0 0 0)
                           (vector 0 0 0 0 0 0 0)
                           (vector 0 0 0 0 0 0 0)
@@ -134,7 +187,7 @@
 (if (> r 5) 0 (if (= (vector-ref (list-ref board-state r) c) 0) 1 0)))
 
 (define (get-dir-token-count r c dr dc count)
-(let ((nr (+ r dr)) (nc (+ c dc)))
+(let* ((nr (+ r dr)) (nc (+ c dc)))
 (if (and (<= nr 5) (>= nr 0) (>= nc 0) (<= nc 6))
     (if (= (vector-ref (list-ref board-state r) c)
         (vector-ref (list-ref board-state nr) nc))
@@ -185,7 +238,7 @@
 
 
 (define (click x y)
-(let ((c (quotient (ceiling x) 100))(r (quotient (ceiling y) 100)))
+(let* ((c (quotient (ceiling x) 100))(r (quotient (ceiling y) 100)))
 (if (and (= (token-space-is-empty r c) 1) (= (token-space-is-empty (+ r 1) c) 0))
         (put-token r c))))
 
@@ -197,16 +250,84 @@
 
     </div>
     <div id="buttons">
-        <button id="download-button" onclick="getWasm()">Download WASM</button>
+        <div class="custom-select" style="width:200px;">
+            <select>
+                <option value="0">Download Wasm</option>
+                <option value="1">Wasm + Wat + HTML template</option>
+                <option value="2">Wasm</option>
+                <option value="3">Wat</option>
+            </select>
+        </div>
         <button id="compile-button" onclick="compile()">Compile</button>
         <button id="run-button" onclick="run()">Run</button>
     </div>
+
+
+
     <textarea id="output"></textarea>
 </div>
 <div id="canvas-container">
 </div>
 
+<script>
+    //tento select script plus prislusne css je prebraty z w3schools: clanok How TO - Custom Select Box
+    var x, i, j, l, ll, selElmnt, a, b, c;
+    x = document.getElementsByClassName("custom-select");
+    l = x.length;
+    for (i = 0; i < l; i++) {
+        selElmnt = x[i].getElementsByTagName("select")[0];
+        ll = selElmnt.length;
+        a = document.createElement("DIV");
+        a.setAttribute("class", "select-selected");
+        a.innerHTML = selElmnt.options[selElmnt.selectedIndex].innerHTML;
+        x[i].appendChild(a);
+        b = document.createElement("DIV");
+        b.setAttribute("class", "select-items select-hide");
+        for (j = 1; j < ll; j++) {
+            c = document.createElement("DIV");
+            c.innerHTML = selElmnt.options[j].innerHTML;
+            c.addEventListener("click", function(e) {
+                s = this.parentNode.parentNode.getElementsByTagName("select")[0];
+                sl = s.length;
+                for (i = 0; i < sl; i++) {
+                    if (s.options[i].innerHTML == this.innerHTML) {
+                        getWasm(i)
+                    }
+                }
+            });
+            b.appendChild(c);
+        }
+        x[i].appendChild(b);
+        a.addEventListener("click", function(e) {
+            e.stopPropagation();
+            closeAllSelect(this);
+            this.nextSibling.classList.toggle("select-hide");
+            this.classList.toggle("select-arrow-active");
+        });
+    }
 
+    function closeAllSelect(elmnt) {
+        var x, y, i, xl, yl, arrNo = [];
+        x = document.getElementsByClassName("select-items");
+        y = document.getElementsByClassName("select-selected");
+        xl = x.length;
+        yl = y.length;
+        for (i = 0; i < yl; i++) {
+            if (elmnt == y[i]) {
+                arrNo.push(i)
+            } else {
+                y[i].classList.remove("select-arrow-active");
+            }
+        }
+        for (i = 0; i < xl; i++) {
+            if (arrNo.indexOf(i)) {
+                x[i].classList.add("select-hide");
+            }
+        }
+    }
+
+    document.addEventListener("click", closeAllSelect);
+</script>
 
 
 
@@ -247,7 +368,6 @@
     window.run = run
     window.getWasm = getWasm
     window.onerror = (e) => {document.getElementById("output").innerHTML = e.toString();}
-
     initEditor()
 
     function compile(){
@@ -262,8 +382,8 @@
 
     }
 
-    function getWasm() {
-        downloadWasm();
+    function getWasm(option) {
+        downloadWasm(option);
     }
 
     async function run(){

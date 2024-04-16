@@ -2,7 +2,7 @@ token literal names:
 null
 'define'
 'lambda'
-'let'
+'let*'
 'begin'
 'if'
 'set!'

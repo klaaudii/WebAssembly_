@@ -16,7 +16,7 @@ defineFnc: SPACE? PSTART SPACE? 'define' SPACE?
 fncBodyExpr: SPACE? (expr | biExpr | uniExpr | (SPACE literal) | (SPACE identifier) | callFnc | ifExpr | setExpr
             | listExpr | displayExpr | vectorExpr | beginExpr)* SPACE?;
 
-localFncBodyExpr: SPACE? PSTART SPACE? 'let' SPACE? PSTART SPACE? ((PSTART  varPairExpr  PEND) SPACE?)* PEND
+localFncBodyExpr: SPACE? PSTART SPACE? 'let*' SPACE? PSTART SPACE? ((PSTART  varPairExpr  PEND) SPACE?)* PEND
                SPACE? fncBodyExpr SPACE? PEND SPACE?;
 
 varPairExpr: SPACE? identifier (expr | (SPACE literal) | (SPACE identifier) | callFnc | vectorExpr | listExpr | uniExpr | biExpr) SPACE?;
@@ -68,15 +68,15 @@ identifier: VARIABLE;
 OPERATOR: [-+*/] | '+v';
 LOGOPERATOR:  'and' | 'or';
 BIOPERATOR: 'quotient' | 'remainder';
-LOGBIOPERATOR: '=' | '<=' | '>=' | '<' | '>' | '!=';
+LOGBIOPERATOR: '=' | '<=' | '>=' | '<' | '>';
 UNIOPERATOR: 'floor' | 'round' | 'ceiling' | 'truncate';
 LOGUNIOPERATOR: 'null?';
 VARIABLE: [a-zA-Z][a-zA-Z-!]*[0-9]*;
 PSTART: '(';
 PEND: ')';
-SPACE: [ ]([ ]|'\n')*;
-FLOAT: [0-9]+ '.' [0-9]+;
-INT: [0-9]+;
+SPACE: ([ ]|'\n')([ ]|'\n')*;
+FLOAT: (([1-9][0-9]*) | '0') '.' [0-9]+;
+INT: [1-9][0-9]* | '0';
 NFLOAT: '-'FLOAT;
 NINT: '-'INT;
 WS: [ \t\r\n]+ -> skip;
