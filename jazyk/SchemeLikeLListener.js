@@ -14,6 +14,15 @@ export default class SchemeLikeLListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
+	// Enter a parse tree produced by SchemeLikeLParser#sExpr.
+	enterSExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by SchemeLikeLParser#sExpr.
+	exitSExpr(ctx) {
+	}
+
+
 	// Enter a parse tree produced by SchemeLikeLParser#expr.
 	enterExpr(ctx) {
 	}

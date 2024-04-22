@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>Connect4</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<body style="text-align: center">
+<h2 style="text-align: center; font-size: 30px; ">Connect 4</h2>
+    <p style="max-width: 500px; margin: 0 auto; font-size: 16px;"><b>Pravidlá: </b>Hráči sa striedajú v umiestňovaní žetónov do stĺpcov na hracej ploche s cieľom vytvoriť rady
+        s minimálne štyrmi svojimi žetónmi vodorovne, zvislo alebo diagonálne.
+        Hráč, ktorý prvý dokáže vytvoriť takýto rad, vyhráva hru.</p><br>
+
+
+<script>
+
+    memory = new WebAssembly.Memory({initial:100, maximum: 65536});
+    mem_i32 = new Int32Array(memory.buffer);
+    mem_f32 = new Float32Array(memory.buffer);
+
+    const importObject = {
+        env: {
+            memory: memory,
+            throwError: throwError,
+            displayNumber: displayNumber,
+            displayList: displayList,
+            displayVec: displayVec,
+            displayUndef: displayUndef,
+            newline: newline,
+            createCanvasElement: createCanvasElement,
+            updateCanvasData: updateCanvasData,
+            canvasFillText: canvasFillText,
+            addCanvasOnClickListener: addCanvasOnClickListener,
+        }};
+
+    let exports;
+    let canvasMap = new Map();
+
+    WebAssembly.instantiateStreaming( fetch('binary.wasm'), importObject)
+        .then(obj => {
+            obj.instance.exports.main();
+            exports = obj.instance.exports
+            //when passing number values to a WebAssembly function, use the toWasmNumber conversion,
+            // when retrieving number values, use fromWasmNumber
+
+        }).catch(error => {
+            console.error(error)
+        });
+
+
+    function toWasmNumber(value) {
+        return new Uint32Array(new Float32Array([value]).buffer)[0] & -2;
+    }
+
+    function fromWasmNumber(value) {
+        return new Float32Array(new Uint32Array ([value]).buffer)[0];
+    }
+
+
+    const ErrorType = {
+        ExpectedNumberActualList: 0,
+        ExpectedNumberActualVector: 1,
+        ExpectedListActualVector: 2,
+        ExpectedListActualNumber: 3,
+        ExpectedVectorActualList: 4,
+        ExpectedVectorActualNumber: 5,
+        ExpectedNumberActualVoid: 6,
+        ExpectedListActualVoid: 7,
+        ExpectedVectorActualVoid: 8,
+        ExpectedListActualEmpty: 9,
+        ExpectedVectorActualEmpty: 10,
+        IndexOutOfBounds: 11,
+    }
+
+
+    function throwError(value) {
+
+        switch (value) {
+            case ErrorType.ExpectedNumberActualList:
+                throw new TypeError("expected type: Number, actual type: List");
+            case ErrorType.ExpectedNumberActualVector:
+                throw new TypeError("expected type: Number, actual type: Vector");
+            case ErrorType.ExpectedListActualVector:
+                throw new TypeError("expected type: List, actual type: Vector");
+            case ErrorType.ExpectedListActualNumber:
+                throw new TypeError("expected type: List, actual type: Number");
+            case ErrorType.ExpectedVectorActualList:
+                throw new TypeError("expected type: Vector, actual type: List");
+            case ErrorType.ExpectedVectorActualNumber:
+                throw new TypeError("expected type: Vector, actual type: Number");
+            case ErrorType.ExpectedVectorActualVoid:
+                throw new TypeError("expected type: Vector, actual type: Void");
+            case ErrorType.ExpectedListActualVoid:
+                throw new TypeError("expected type: List, actual type: Void");
+            case ErrorType.ExpectedNumberActualVoid:
+                throw new TypeError("expected type: Number, actual type: Void");
+            case ErrorType.ExpectedListActualEmpty:
+                throw new Error("cannot perform the operation on an empty List");
+            case ErrorType.ExpectedVectorActualEmpty:
+                throw new Error("cannot perform the operation on an empty Vector");
+            case ErrorType.IndexOutOfBounds:
+                throw new Error("index out of bounds");
+            default:
+                throw new Error("unspecified error")
+        }
+    }
+
+    function createCanvasElement(address, width, height) {
+        let canvas = document.createElement('canvas');
+        canvas.height = height;
+        canvas.width = width;
+        document.body.appendChild(canvas);
+        canvasMap.set(address, {canvas: canvas, clickHandler: undefined });
+    }
+
+    function updateCanvasData(address) {
+        let canvas = canvasMap.get(address).canvas;
+        let width = mem_f32[address/4];
+        let height = mem_f32[address/4 + 1];
+        const image_data = new ImageData( new Uint8ClampedArray(mem_i32.buffer, address + 8,
+            width*height*4), width, height);
+        canvas.getContext('2d').putImageData(image_data, 0, 0);
+    }
+
+
+    function addCanvasOnClickListener(address, fncNum) {
+        let canvas = canvasMap.get(address).canvas;
+        let clickHandler = canvasMap.get(address).clickHandler;
+        if (clickHandler) {
+            canvas.removeEventListener('click',  clickHandler);
+        }
+        clickHandler = (e) => {
+            const rect = canvas.getBoundingClientRect()
+            const x = e.clientX - rect.left
+            const y = e.clientY - rect.top
+            let xValue = new Uint32Array(new Float32Array([x]).buffer)[0] & -2;
+            let yValue = new Uint32Array(new Float32Array([y]).buffer)[0] & -2;
+            Object.entries(exports).at(fncNum).at(1)(xValue, yValue);
+        };
+        canvasMap.get(address).clickHandler = clickHandler;
+        canvas.addEventListener('click', clickHandler);
+    }
+
+    function canvasFillText(address, vector, x, y) {
+        let canvas = canvasMap.get(address).canvas;
+        let text = "";
+        let pointer = vector >> 2;
+        let length = mem_i32[pointer/4];
+        for (let i = 1; i <= length; i++) {
+            text += String.fromCharCode(mem_f32[(pointer+i*4)/4]);
+        }
+        let x_pos = new Float32Array(new Uint32Array([x]).buffer)[0];
+        let y_pos = new Float32Array(new Uint32Array([y]).buffer)[0];
+        let ctx = canvas.getContext('2d');
+        ctx.font = "bold 30px Arial";
+        ctx.fillText(text, x_pos, y_pos);
+    }
+
+    function newline() {
+        console.log('\n')
+    }
+
+    function displayNumber(value) {
+        console.log(value)
+    }
+
+    function displayList(listPointer) {
+        let list = "(";
+        let stack = [];
+
+        let pointer = listPointer >> 2;
+        while (true) {
+            if (pointer === -1) {
+                if (stack.length > 0) {
+                    pointer = stack.pop();
+                    list += ")";
+                    if (pointer !== -1) list += " ";
+                    continue;
+                } else {
+                    list += ")";
+                    console.log(list);
+                    break;
+                }
+
+            }
+            if ((mem_i32[pointer/4] & 1) === 1 ) {
+                if ((mem_i32[pointer/4] & 3) === 3 ) {
+                    list += "#("
+                    let point = mem_i32[pointer/4] >> 2;
+                    let length = mem_i32[point/4];
+                    for (let i = 1; i <= length; i++) {
+                        list += mem_f32[(point+i*4)/4];
+                        if (i !== length) list += " ";
+                    }
+                    list += ")"
+                }
+                else {
+                    stack.push( mem_i32[(pointer +4) / 4]);
+                    list += "(";
+                    pointer = mem_i32[pointer / 4] >> 2;
+                    continue;
+                }
+            } else {
+                list += mem_f32[pointer/4];
+            }
+            pointer = mem_i32[(pointer + 4)/4];
+            if (pointer !== -1) {
+                list += " ";
+            }
+        }
+    }
+
+
+    function displayVec(vectorPointer) {
+        let vector = "#("
+        let pointer = vectorPointer >> 2;
+        let length = mem_i32[pointer/4];
+        for (let i = 1; i <= length; i++) {
+            vector += mem_f32[(pointer+i*4)/4];
+            if (i !== length) {
+                vector += " "
+            }
+        }
+        vector += ")"
+        console.log(vector)
+    }
+
+    function displayUndef() {
+        console.log("#<undef>")
+    }
+
+
+
+
+
+</script>
+
+</body>
+</html>

@@ -38,7 +38,6 @@ export class DisplayNode extends ASTNode {
 
 export class MultiOpNode extends ASTNode {
     constructor(operator, values) {
-        // super('MULTI_OP_NODE');
         super();
         this.operator = operator
         this.values = values;
@@ -47,7 +46,6 @@ export class MultiOpNode extends ASTNode {
 
 export class LogMultiOpNode extends ASTNode {
     constructor(operator, values) {
-        // super('MULTI_OP_NODE');
         super();
         this.operator = operator
         this.values = values;
@@ -56,7 +54,6 @@ export class LogMultiOpNode extends ASTNode {
 
 export class BiOpNode extends ASTNode {
     constructor(operator, left, right) {
-        // super('MULTI_OP_NODE');
         super();
         this.operator = operator
         this.left = left;
@@ -66,7 +63,6 @@ export class BiOpNode extends ASTNode {
 
 export class LogBiOpNode extends ASTNode {
     constructor(operator, left, right) {
-        // super('MULTI_OP_NODE');
         super();
         this.operator = operator
         this.left = left;
@@ -173,7 +169,6 @@ export class SetNode extends ASTNode {
 
 export class LiteralNode extends ASTNode {
     constructor(value) {
-        // super('LITERAL');
         super();
         this.value = value;
     }
@@ -190,7 +185,6 @@ export class LoopNode extends ASTNode {
 
 export class DefineVarNode extends ASTNode {
     constructor(identifier, value) {
-        // super('VARIABLE');
         super();
         this.identifier = identifier;
         this.value = value;
@@ -199,7 +193,6 @@ export class DefineVarNode extends ASTNode {
 
 export class IdentifierNode extends ASTNode {
     constructor(value) {
-        // super('Identifier');
         super();
         this.value = value;
     }
@@ -207,14 +200,10 @@ export class IdentifierNode extends ASTNode {
 
 export class BeginNode extends ASTNode {
     constructor(expressions) {
-        // super('Identifier');
         super();
         this.expressions = expressions;
     }
 }
-
-
-
 
 
 export class DefineFuncNode extends ASTNode {

@@ -4,38 +4,20 @@ var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 var SchemeLikeHighlightRules = function () {
     var keywordControl = "let*|if|begin";
     var keywordOperator = "and|or|null?|quotient|floor|round|ceiling|truncate|remainder";
-    // var constantLanguage = "#t|#f";
     var supportFunctions = "display|car|cdr|lambda|set!|list|vector-ref|vector-set!|car-set!|cdr-set!|canvas|" +
-        "fill-rect|fill-arc|color|canvas-onclick|vector|list-ref|fill-text|export";  //tu dopln grafiku
+        "fill-rect|fill-circle|color|canvas-onclick|vector|list-ref|fill-text|export|newline|vector-length";
     var keywordMapper = this.createKeywordMapper({
         "keyword.control": keywordControl,
         "keyword.operator": keywordOperator,
-        // "constant.language": constantLanguage,
         "support.function": supportFunctions
     }, "identifier", false);
     this.$rules =
         {
             "start": [
                 {
-                    token: "comment",
-                    regex: ";.*$"
-                },
-                // {
-                //     "token": ["storage.type.function-type.schemeLike", "text", "entity.name.function.schemeLike"],
-                //     "regex": "(?:\\b(?:(define))\\b)(\\s+)((?:\\w|\\-|\\!|\\?)*)"
-                // },
-                {
                     "token": ["storage.type.function-type.schemeLike"],
                     "regex": "(?:\\b(?:(define))\\b)"
                 },
-                // {
-                //     "token": "punctuation.definition.constant.character.schemeLike",
-                //     "regex": "#:\\S+"
-                // },
-                // {
-                //     "token": ["punctuation.definition.variable.schemeLike", "variable.other.global.schemeLike", "punctuation.definition.variable.schemeLike"],
-                //     "regex": "(\\*)(\\S*)(\\*)"
-                // },
                 {
                     "token": "constant.numeric", // float
                     "regex": "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?"
@@ -45,28 +27,6 @@ var SchemeLikeHighlightRules = function () {
                     "regex": "[a-zA-Z_#][a-zA-Z0-9_\\-\\?\\!\\*]*"
                 },
             ],
-            // "qqstring": [
-            //     {
-            //         "token": "constant.character.escape.schemeLike",
-            //         "regex": "\\\\."
-            //     },
-            //     {
-            //         "token": "string",
-            //         "regex": '[^"\\\\]+',
-            //         "merge": true
-            //     },
-            //     {
-            //         "token": "string",
-            //         "regex": "\\\\$",
-            //         "next": "qqstring",
-            //         "merge": true
-            //     }, {
-            //         "token": "string",
-            //         "regex": '"|$',
-            //         "next": "start",
-            //         "merge": true
-            //     }
-            // ]
         };
 };
 oop.inherits(SchemeLikeHighlightRules, TextHighlightRules);
