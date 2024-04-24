@@ -523,7 +523,7 @@ export function compileToWasm(){
     const tokens = new antlr4.CommonTokenStream(lexer);
     const parser = new SchemeLikeLParser(tokens);
     const parseTree = parser.start();
-    console.log(parseTree)
+    // console.log(parseTree)
 
     const visitor = new MyVisitor();
     const tree = visitor.visit(parseTree);
@@ -654,141 +654,202 @@ export function runWasm(wasmBinary) {
         //     (export f)
         //     (export addv)
         //     (export add2)
+        //
+        //     (define (ff rv v pv i) (if (< i 10)  (begin (f rv v) (add2 v v) (ff rv v pv (+ i 1)) ) (begin) ))
+        //     (export ff)
 
-        //     let canvas = document.createElement("canvas")
-        //     let div = document.createElement("div")
-        //     canvas.width = 500;
-        //     canvas.height = 500;
-        //     div.appendChild(canvas);
-        //     document.body.appendChild(div)
-        //     let ctx = canvas.getContext('2d');
-        //
-        //     let n_vectors = 20*200;   //nasobok 2
-        //     let size = n_vectors*2;
-        //     mem_i32[0] = 4;
-        //     mem_i32[1] = 0;
-        //     mem_i32[2] = 0;
-        //     mem_i32[3] = 0;
-        //     mem_i32[4] = 0;
-        //     mem_i32[5] = size;
-        //     let rad = canvas.width/2
-        //     for (let i = 6; i < 6 + size ; i++) {
-        //         mem_f32[i] = Math. floor(Math. random() * (rad - -rad + 1)) -rad;
-        //     }
-        //
-        //     mem_i32[6+size] = size;
-        //     for (let i = 7+size; i < 7 + 2* size ; i++) {
-        //         mem_f32[i] = Math. floor(Math. random() * (10 - -10 + 1)) -10;
-        //     }
-        //     mem_i32[7+2*size] = size;
-        //     for (let i = 8+2*size; i < 8 + 3* size ; i++) {
-        //         mem_f32[i] = Math. floor(Math. random() * (10 - -10 + 1)) -10;
-        //     }
-        //     mem_i32[8+3*size] = size;
-        //     for (let i = 9+3*size; i < 9 + 4* size ; i++) {
-        //         mem_f32[i] = Math. floor(Math. random() * (10 - -10 + 1)) -10;
-        //     }
-        //     let arr = [6+size, 7+2*size, 8+3*size]
-        //
-        //     let index = 0;
-        //     let timediff = 0;
-        //
-        //     // animate()
-        //     function animate() {
-        //         mem_i32[1] = 0;
-        //         mem_i32[2] = 0;
-        //         mem_i32[3] = 0;
-        //         mem_i32[4] = 0;
-        //             updateCanvas()
-        //         // let startTime = performance.now();
-        //             console.time("wasm")
-        //             exports.f(3, (4*5 << 2) | 3)
-        //             let index = Math.floor(Math.random() * arr.length)
-        //             exports.add2( (4*5 << 2) | 3, (4*(arr[index]) << 2) | 3  )
-        //         console.timeEnd("wasm")
-        //         // let endTime = performance.now();
-        //         //     timediff += endTime - startTime;
-        //             ctx.strokeStyle = 'red';
-        //             ctx.beginPath();
-        //             ctx.moveTo(250,250);
-        //             // console.log(mem_f32[1])
-        //             ctx.lineTo(mem_f32[1]+250, mem_f32[2]+250);
-        //             ctx.stroke();
-        //         // requestAnimationFrame(animate);
-        //         i++
-        //         if (i < 100) setTimeout(()=> animate(), 100)
-        //         else console.log(timediff)
-        //     }
-        //
-        //     let vectors = [];
-        //     for (let i = 0; i < size ; i++) {
-        //         vectors.push( Math. floor(Math. random() * (rad - -rad + 1)) -rad);
-        //     }
-        //     let v1 = [];
-        //     for (let i = 0; i < size ; i++) {
-        //         v1.push( Math. floor(Math. random() * (10 - -10 + 1)) -10);
-        //     }
-        //     let v2 = [];
-        //     for (let i = 0; i < size ; i++) {
-        //         v2.push( Math. floor(Math. random() * (10 - -10 + 1)) -10);
-        //     }
-        //     let v3 = [];
-        //     for (let i = 0; i < size ; i++) {
-        //         v3.push( Math. floor(Math. random() * (10 - -10 + 1)) -10);
-        //     }
-        //     let versions = [v1, v2, v3]
-        //
-        //     // animateJs()
-        //     function animateJs() {
-        //         ctx.fillStyle = '#f0f0f0';
-        //         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        //         ctx.strokeStyle  = 'black';
-        //         for (let i = 0; i < vectors.length; i+= 2) {
-        //             ctx.beginPath();
-        //             ctx.moveTo(250,250);
-        //             ctx.lineTo(vectors[i]+250, vectors[i+1]+250);
-        //             ctx.stroke();
-        //         }
-        //         // let startTime = performance.now();
-        //         console.time("JS")
-        //         let x = 0;
-        //         let y = 0;
-        //         for(let i = 6; i < 6+size ; i+=2) {
-        //             x += vectors[i];
-        //         }
-        //         for(let i = 7; i < 6+size; i+=2) {
-        //             y += vectors[i];
-        //         }
-        //         let index = Math.floor(Math.random() * versions.length)
-        //         let per = versions[index];
-        //         for(let i = 0; i < per.length; i++) {
-        //             vectors[i] += per[i];
-        //         }
-        //         console.timeEnd("JS")
-        //         // let endTime = performance.now();
-        //         // timediff += endTime - startTime;
-        //         // console.log(endTime-startTime)
-        //         ctx.strokeStyle = 'red';
-        //         ctx.beginPath();
-        //         ctx.moveTo(250,250);
-        //         ctx.lineTo(x+250, y+250);
-        //         ctx.stroke();
-        //         i++;
-        //         if (i < 100) setTimeout(()=> animateJs(), 100)
-        //         else console.log(timediff)
-        //     }
-        //
-        //     function updateCanvas() {
-        //         ctx.fillStyle = '#f0f0f0';
-        //         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        //         ctx.strokeStyle  = 'black';
-        //         for (let i = 6; i < 6+size; i+= 2) {
-        //             ctx.beginPath();
-        //             ctx.moveTo(250,250);
-        //             ctx.lineTo(mem_f32[i]+250, mem_f32[i+1]+250);
-        //             ctx.stroke();
-        //         }
-        //     }
+            // let canvas = document.createElement("canvas")
+            // let div = document.createElement("div")
+            // canvas.width = 500;
+            // canvas.height = 500;
+            // div.appendChild(canvas);
+            // document.body.appendChild(div)
+            // let ctx = canvas.getContext('2d');
+            //
+            // let canvas2 = document.createElement("canvas")
+            // let div2 = document.createElement("div")
+            // canvas2.width = 500;
+            // canvas2.height = 500;
+            // div2.appendChild(canvas2);
+            // document.body.appendChild(div2)
+            // let ctx2 = canvas2.getContext('2d');
+            //
+            //
+            // let n_vectors = 4;   //nasobok 4
+            // let size = n_vectors*2;
+            // mem_i32[0] = 4;
+            // mem_i32[1] = 0;
+            // mem_i32[2] = 0;
+            // mem_i32[3] = 0;
+            // mem_i32[4] = 0;
+            //
+            // mem_i32[5] = size;
+            // let rad = 100
+            // for (let i = 6; i < 6 + size ; i++) {
+            //     mem_f32[i] = Math. floor(Math. random() * (rad - -rad + 1)) -rad;
+            // }
+            //
+            // mem_i32[6+size] = size;
+            // for (let i = 7+size; i < 7 + 2* size ; i+=2) {
+            //     if (Math.floor(Math.random() * 2)) {
+            //         mem_f32[i] = Math. floor(Math. random() * (10 - -10 + 1)) -10;
+            //         mem_f32[i+1] = 0;
+            //     } else {
+            //         mem_f32[i+1] = Math. floor(Math. random() * (10 - -10 + 1)) -10;
+            //         mem_f32[i] = 0;
+            //     }
+            // }
+            // mem_i32[7+2*size] = size;
+            // for (let i = 8+2*size; i < 8 + 3* size ; i+=2) {
+            //     if (Math.floor(Math.random() * 2)) {
+            //         mem_f32[i] = Math. floor(Math. random() * (10 - -10 + 1)) -10;
+            //         mem_f32[i+1] = 0;
+            //     } else {
+            //         mem_f32[i+1] = Math. floor(Math. random() * (10 - -10 + 1)) -10;
+            //         mem_f32[i] = 0;
+            //     }
+            // }
+            // mem_i32[8+3*size] = size;
+            // for (let i = 9+3*size; i < 9 + 4* size ; i++) {
+            //     if (Math.floor(Math.random() * 2)) {
+            //         mem_f32[i] = Math. floor(Math. random() * (10 - -10 + 1)) -10;
+            //         mem_f32[i+1] = 0;
+            //     } else {
+            //         mem_f32[i+1] = Math. floor(Math. random() * (10 - -10 + 1)) -10;
+            //         mem_f32[i] = 0;
+            //     }
+            // }
+            // let vecPointers = [6+size, 7+2*size, 8+3*size]
+            //
+            //
+            // let vectors = [];
+            // for (let i = 0; i < size ; i++) {
+            //     vectors.push( mem_f32[i+6]);
+            // }
+            // let p1 = [];
+            // for (let i = 0; i < size ; i++) {
+            //     p1.push( mem_f32[i+7+size]);
+            // }
+            // let p2 = [];
+            // for (let i = 0; i < size ; i++) {
+            //     p2.push(  mem_f32[i+8+2*size]);
+            // }
+            // let p3 = [];
+            // for (let i = 0; i < size ; i++) {
+            //     p3.push(  mem_f32[i+9+3*size]);
+            // }
+            // let pertV = [p1, p2, p3]
+            //
+            // let pertIndices = [];
+            // for (let i = 0; i < 100; i++) {
+            //     pertIndices.push(Math.floor(Math.random() * 2))
+            // }
+            //
+            // // ctx.fillStyle("white")
+            // // ctx.fillRect(0,0,canvas.width, canvas.height)
+            // let i = 0;
+            // animate()
+            // function animate() {
+            //     console.log(i)
+            //     mem_i32[1] = 0;
+            //     mem_i32[2] = 0;
+            //     mem_i32[3] = 0;
+            //     mem_i32[4] = 0;
+            //     ctx.fillStyle = '#f0f0f0';
+            //     ctx.fillRect(0, 0, canvas.width, canvas.height);
+            //     ctx.strokeStyle  = 'black';
+            //     for (let i = 6; i < 6+size; i+= 2) {
+            //         ctx.beginPath();
+            //         ctx.moveTo(250,250);
+            //         ctx.lineTo(mem_f32[i]+250, mem_f32[i+1]+250);
+            //         ctx.stroke();
+            //     }
+            //     // let startTime = performance.now();
+            //         let index = pertIndices[i];
+            //         let permPointer = vecPointers[index];
+            //         let permPointerWasm = (4*(permPointer) << 2) | 3;
+            //         let vectPointerWasm = (4*5 << 2) | 3;
+            //         console.time("wasm")
+            //      exports.ff(3, vectPointerWasm, permPointerWasm, 0)
+            //     //     exports.f(3, vectPointerWasm)
+            //     // exports.add2( vectPointerWasm , permPointerWasm  )
+            //         console.timeEnd("wasm")
+            //     // let endTime = performance.now();
+            //     //     timediff += endTime - startTime;
+            //         ctx.strokeStyle = 'red';
+            //         ctx.beginPath();
+            //         ctx.moveTo(250,250);
+            //         // console.log(mem_f32[1])
+            //         ctx.lineTo(mem_f32[1]+250, mem_f32[2]+250);
+            //         ctx.stroke();
+            //     // requestAnimationFrame(animate);
+            //     i++
+            //     if (i < 10) setTimeout(()=> animate(), 100)
+            //     else  {
+            //         i = 0;
+            //         animateJs();}
+            // }
+            //
+            //
+            //
+            // // ctx.fillStyle("white")
+            // // ctx.fillRect(0,0,canvas.width, canvas.height)
+            // // animateJs()
+            //
+            // let timeJs = 0;
+            // function animateJs() {
+            //     console.log(i)
+            //     ctx2.fillStyle = '#f0f0f0';
+            //     ctx2.fillRect(0, 0, canvas2.width, canvas2.height);
+            //     ctx2.strokeStyle  = 'black';
+            //     for (let i = 0; i < vectors.length; i+= 2) {
+            //         ctx2.beginPath();
+            //         ctx2.moveTo(250,250);
+            //         ctx2.lineTo(vectors[i]+250, vectors[i+1]+250);
+            //         ctx2.stroke();
+            //     }
+            //     // let startTime = performance.now();
+            //     let index = pertIndices[i];
+            //     let pV = pertV[index];
+            //     console.time("JS")
+            //     // const t0 = performance.now();
+            //     let x = 0;
+            //     let y = 0;
+            //     for(let i = 0; i < size ; i+=2) {
+            //         x += vectors[i];
+            //     }
+            //
+            //
+            //     x /= n_vectors;
+            //     for(let i = 1; i < size; i+=2) {
+            //         y += vectors[i];
+            //     }
+            //     for(let i = 0; i < pV.length; i++) {
+            //         vectors[i] += pV[i];
+            //     }
+            //     y /= n_vectors;
+            //
+            //     // const t1 = performance.now();
+            //     // const duration = t1 - t0;
+            //     console.timeEnd("JS")
+            //     // console.log(`Duration: ${duration} milliseconds`);
+            //
+            //
+            //
+            //
+            //     // let endTime = performance.now();
+            //     // timediff += endTime - startTime;
+            //     // console.log(endTime-startTime)
+            //     ctx2.strokeStyle = 'red';
+            //     ctx2.beginPath();
+            //     ctx2.moveTo(250,250);
+            //
+            //     ctx2.lineTo(x+250, y+250);
+            //     ctx2.stroke();
+            //     i++;
+            //     if (i < 10) setTimeout(()=> animateJs(), 100)
+            // }
+
 
 
 
@@ -1485,28 +1546,70 @@ function init() {
 
         ],
         wasmModule.block("", [
+            //emptyVector
+            wasmModule.if(wasmModule.i32.eq(wasmModule.local.get(0, binaryen.i32), wasmModule.i32.const(-1)),
+                wasmModule.return(wasmModule.local.get(0, binaryen.i32))),
 
-            //         (define v (vector 1 2 3 4))
-            // (define v2 (vector 2 4 6 8))
-            // (display (+v v v2))
+            wasmModule.if(wasmModule.i32.eq(wasmModule.local.get(3, binaryen.i32), wasmModule.i32.const(-1)),
+                wasmModule.return(wasmModule.local.get(0, binaryen.i32))),
 
-            // (define v (vector 1 2 3 4 5))
-            // (display (+v v 10))
-
-    //         (define v (vector 1 2 3 4 5 6 7 8 9))
-    // (define v2 (vector 10 20 30 40 50 60 70 80 90 100))
-    // (display (+v v 5 20 v2 1 20))
-
-            // vectorEmptyError,
             // notVectorError,
-            //aj pre druhy treba kontrolu
-            // notNumberError,
+            wasmModule.if(wasmModule.i32.ne(
+                    wasmModule.i32.and(wasmModule.local.get(0, binaryen.i32), wasmModule.i32.const(3)),
+                    wasmModule.i32.const(3)),
+                wasmModule.if(wasmModule.i32.eq(
+                        wasmModule.i32.and(wasmModule.local.get(0, binaryen.i32), wasmModule.i32.const(1)),
+                        wasmModule.i32.const(0)),
+                    wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedVectorActualNumber)], binaryen.none),
+                    wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedVectorActualList)], binaryen.none))),
 
-            // wasmModule.if(wasmModule.i32.eq(wasmModule.local.get(0, binaryen.i32), wasmModule.i32.const(-1)),
-            //     wasmModule.return(wasmModule.local.get(0, binaryen.i32))),
-            //
-            // wasmModule.if(wasmModule.i32.eq(wasmModule.local.get(3, binaryen.i32), wasmModule.i32.const(-1)),
-            //     wasmModule.return(wasmModule.local.get(0, binaryen.i32))),
+            wasmModule.if(wasmModule.i32.ne(
+                    wasmModule.i32.and(wasmModule.local.get(3, binaryen.i32), wasmModule.i32.const(3)),
+                    wasmModule.i32.const(3)),
+                wasmModule.if(wasmModule.i32.eq(
+                        wasmModule.i32.and(wasmModule.local.get(3, binaryen.i32), wasmModule.i32.const(1)),
+                        wasmModule.i32.const(0)),
+                    wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedVectorActualNumber)], binaryen.none),
+                    wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedVectorActualList)], binaryen.none))),
+            //notNumberError
+        wasmModule.if(wasmModule.i32.eq(
+            wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(3)),
+            wasmModule.i32.const(3)),
+        wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualVector)], binaryen.none),
+        wasmModule.if(wasmModule.i32.eq(
+                wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(3)),
+                wasmModule.i32.const(1)),
+            wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualList)], binaryen.none))),
+
+    wasmModule.if(wasmModule.i32.eq(
+            wasmModule.i32.and(wasmModule.local.get(2, binaryen.i32), wasmModule.i32.const(3)),
+            wasmModule.i32.const(3)),
+        wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualVector)], binaryen.none),
+        wasmModule.if(wasmModule.i32.eq(
+                wasmModule.i32.and(wasmModule.local.get(2, binaryen.i32), wasmModule.i32.const(3)),
+                wasmModule.i32.const(1)),
+            wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualList)], binaryen.none))),
+
+    wasmModule.if(wasmModule.i32.eq(
+            wasmModule.i32.and(wasmModule.local.get(4, binaryen.i32), wasmModule.i32.const(3)),
+            wasmModule.i32.const(3)),
+        wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualVector)], binaryen.none),
+        wasmModule.if(wasmModule.i32.eq(
+                wasmModule.i32.and(wasmModule.local.get(4, binaryen.i32), wasmModule.i32.const(3)),
+                wasmModule.i32.const(1)),
+            wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualList)], binaryen.none))),
+
+    wasmModule.if(wasmModule.i32.eq(
+            wasmModule.i32.and(wasmModule.local.get(5, binaryen.i32), wasmModule.i32.const(3)),
+            wasmModule.i32.const(3)),
+        wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualVector)], binaryen.none),
+        wasmModule.if(wasmModule.i32.eq(
+                wasmModule.i32.and(wasmModule.local.get(5, binaryen.i32), wasmModule.i32.const(3)),
+                wasmModule.i32.const(1)),
+            wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedNumberActualList)], binaryen.none))),
+
+
+
 
             wasmModule.local.set(9, wasmModule.i32.shr_u(
                 wasmModule.local.get(0, binaryen.i32),
@@ -1546,13 +1649,18 @@ function init() {
 
             wasmModule.local.set(13, wasmModule.i32.const(0)),
 
-            // wasmModule.if(wasmModule.i32.lt_s(wasmModule.i32.load(0,0, wasmModule.local.get(9, binaryen.i32)),
-            //       wasmModule.i32.trunc_s.f32(wasmModule.f32.reinterpret( wasmModule.local.get(2, binaryen.i32)))),
-            //     wasmModule.call("error", [wasmModule.i32.const(ErrorType.IndexOutOfBounds)], binaryen.none)),
-            //
-            // wasmModule.if(wasmModule.i32.lt_s(wasmModule.i32.load(0,0, wasmModule.local.get(10, binaryen.i32)),
-            //         wasmModule.i32.trunc_s.f32(wasmModule.f32.reinterpret( wasmModule.local.get(5, binaryen.i32)))),
-            //     wasmModule.call("error", [wasmModule.i32.const(ErrorType.IndexOutOfBounds)], binaryen.none)),
+
+            wasmModule.if(wasmModule.i32.lt_s(wasmModule.i32.load(0,0, wasmModule.local.get(9, binaryen.i32)),
+                  wasmModule.i32.trunc_s.f32(wasmModule.f32.reinterpret( wasmModule.local.get(2, binaryen.i32)))),
+                wasmModule.call("error", [wasmModule.i32.const(ErrorType.IndexOutOfBounds)], binaryen.none)),
+
+            wasmModule.if(wasmModule.i32.lt_s(wasmModule.i32.load(0,0, wasmModule.local.get(10, binaryen.i32)),
+                    wasmModule.i32.trunc_s.f32(wasmModule.f32.reinterpret( wasmModule.local.get(5, binaryen.i32)))),
+                wasmModule.call("error", [wasmModule.i32.const(ErrorType.IndexOutOfBounds)], binaryen.none)),
+
+
+
+
 
             wasmModule.loop("loopAdd",
                 wasmModule.if(wasmModule.i32.gt_s(
@@ -1560,15 +1668,28 @@ function init() {
                         wasmModule.local.get(8, binaryen.i32)), wasmModule.nop(),
                 wasmModule.block("", [
 
+
                     wasmModule.v128.store(0,0, wasmModule.local.get(11, binaryen.i32),
+
                         wasmModule.f32x4.add(
                             wasmModule.v128.load(0,0, wasmModule.local.get(11, binaryen.i32)),
                             wasmModule.v128.load(0,0, wasmModule.local.get(12, binaryen.i32)))),
+
+
+
+                wasmModule.v128.store(0,0, wasmModule.local.get(11, binaryen.i32),
+                    wasmModule.v128.and(
+                        wasmModule.v128.load(0,0, wasmModule.local.get(11, binaryen.i32)),
+                        wasmModule.v128.const({0:254, 1:255, 2:255, 3:255, 4:254, 5:255, 6:255, 7:255,
+                            8:254, 9:255, 10:255, 11:255, 12:254, 13:255, 14:255, 15:255,
+                            length:16}))
+                ),
+
                     wasmModule.local.set(11, wasmModule.i32.add(wasmModule.local.get(11, binaryen.i32), wasmModule.i32.const(16))),
                     wasmModule.local.set(12, wasmModule.i32.add(wasmModule.local.get(12, binaryen.i32), wasmModule.i32.const(16))),
                     wasmModule.local.set(13, wasmModule.i32.add(wasmModule.local.get(13, binaryen.i32), wasmModule.i32.const(4))),
                     wasmModule.br("loopAdd"),
-                ], binaryen.auto)
+                ], binaryen.i32)
                 )
             ),
 
@@ -1586,7 +1707,7 @@ function init() {
             //             wasmModule.br("loopRest")
             //         ], binaryen.auto))
             // ),
-            wasmModule.local.get(0, binaryen.i32),
+             wasmModule.local.get(0, binaryen.i32),
 
 
 
@@ -1599,7 +1720,7 @@ function init() {
 
 
 
-        ], binaryen.auto));
+        ], binaryen.none));
 
 
     // wasmModule.addFunction("vectorAdd", binaryen.createType([binaryen.i32, binaryen.i32]), binaryen.i32, [
