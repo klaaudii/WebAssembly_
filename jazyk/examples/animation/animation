@@ -4,8 +4,10 @@
 
         (define (f rv v)
         (addv rv v 0 4 (vector-length v))
-        (vector-set! rv 0 (/ (+ (vector-ref rv 0) (vector-ref rv 2))  (/ (vector-length v) 2) ))
-        (vector-set! rv 1 (/ (+ (vector-ref rv 1) (vector-ref rv 3))(/ (vector-length v) 2) )))
+        (vector-set! rv 0
+            (/ (+ (vector-ref rv 0) (vector-ref rv 2)) (/ (vector-length v) 2)))
+        (vector-set! rv 1
+            (/ (+ (vector-ref rv 1) (vector-ref rv 3)) (/ (vector-length v) 2))))
 
         (define (add2 v1 v2)
         (+v v1 0 (vector-length v1) v2 0 (vector-length v2)))

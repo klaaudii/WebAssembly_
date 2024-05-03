@@ -628,6 +628,8 @@ export function runWasm(wasmBinary) {
             addCanvasOnClickListener: addCanvasOnClickListener,
         }};
 
+
+
     WebAssembly.instantiate(wasmBytes, importObject)
         .then(obj => {
             // console.time('doSomething')
@@ -1647,6 +1649,9 @@ function init() {
                 wasmModule.local.get(6, binaryen.i32),
                     wasmModule.local.get(7, binaryen.i32))),
 
+            wasmModule.if(wasmModule.i32.eq(wasmModule.local.get(8, binaryen.i32), wasmModule.i32.const(0)),
+                wasmModule.return(wasmModule.local.get(0, binaryen.i32))),
+
             wasmModule.local.set(13, wasmModule.i32.const(0)),
 
 
@@ -1659,13 +1664,32 @@ function init() {
                 wasmModule.call("error", [wasmModule.i32.const(ErrorType.IndexOutOfBounds)], binaryen.none)),
 
 
-
+            // (display (+v (vector 1 2 3 4 5) 0 4 (vector 2 7 8 9 10 11) 1 5))
 
 
             wasmModule.loop("loopAdd",
                 wasmModule.if(wasmModule.i32.gt_s(
                         wasmModule.i32.add(wasmModule.local.get(13, binaryen.i32), wasmModule.i32.const(4)),
-                        wasmModule.local.get(8, binaryen.i32)), wasmModule.nop(),
+                        wasmModule.local.get(8, binaryen.i32)), wasmModule.loop("innerLoop",
+
+                            wasmModule.if(wasmModule.i32.lt_s(
+                                wasmModule.local.get(13, binaryen.i32), wasmModule.local.get(8, binaryen.i32)),
+                                wasmModule.block("", [
+
+                wasmModule.i32.store(0,0, wasmModule.local.get(11, binaryen.i32),
+                            wasmModule.i32.and(
+                            wasmModule.i32.reinterpret(
+                            wasmModule.f32.add(
+                            wasmModule.f32.load(0,0, wasmModule.local.get(11, binaryen.i32)),
+                            wasmModule.f32.load(0,0, wasmModule.local.get(12, binaryen.i32)))),
+                                wasmModule.i32.const(-2))
+                            ),
+                            wasmModule.local.set(11, wasmModule.i32.add(wasmModule.local.get(11, binaryen.i32), wasmModule.i32.const(4))),
+                            wasmModule.local.set(12, wasmModule.i32.add(wasmModule.local.get(12, binaryen.i32), wasmModule.i32.const(4))),
+                            wasmModule.local.set(13, wasmModule.i32.add(wasmModule.local.get(13, binaryen.i32), wasmModule.i32.const(1))),
+                                        wasmModule.br("innerLoop"),
+                            ]
+                        , binaryen.auto),),),
                 wasmModule.block("", [
 
 
@@ -1892,7 +1916,8 @@ function initCanvas() {
          binaryen.i32  //canvas memory size
         ],
         wasmModule.block("",
-            [   wasmModule.local.set(2, wasmModule.global.get("freeMemIndex", binaryen.i32)),
+            [
+                wasmModule.local.set(2, wasmModule.global.get("freeMemIndex", binaryen.i32)),
                 wasmModule.local.set(3, wasmModule.call("process-int-input", [wasmModule.local.get(0, binaryen.i32)], binaryen.i32)),
                 wasmModule.local.set(4, wasmModule.call("process-int-input", [wasmModule.local.get(1, binaryen.i32)], binaryen.i32)),
                 wasmModule.call("create-canvas-js", [wasmModule.local.get(2, binaryen.i32),

@@ -87,6 +87,9 @@
 
 (define (fib3 n a b) (if (<= n 2) a (fib3 (- n 1) (+ a b) a)))
 
+
+
+
 (fib2 6)
 
 
@@ -425,3 +428,11 @@ WS: [ \t\r\n]+ -> skip;
 
 (export is-peterson-number)
 //////////////////////////////////////////
+
+
+
+
+
+npm install assemblyscript
+npx asc index.ts -o myWasm.wasm -b esm --optimize -optimizeLevel 2
+

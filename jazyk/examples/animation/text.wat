@@ -294,7 +294,6 @@
   (local $6 i32)
   (local $7 i32)
   (local $8 i32)
-  (local $9 i32)
   (if
    (i32.eq
     (local.get $0)
@@ -425,7 +424,7 @@
   )
   (local.set $5
    (i32.add
-    (local.tee $8
+    (local.tee $7
      (i32.shr_u
       (local.get $0)
       (i32.const 2)
@@ -436,7 +435,7 @@
   )
   (local.set $2
    (i32.add
-    (local.tee $9
+    (local.tee $8
      (i32.shr_u
       (local.get $2)
       (i32.const 2)
@@ -455,26 +454,59 @@
     )
    )
   )
-  (local.set $6
-   (i32.trunc_f32_s
-    (f32.add
-     (f32.reinterpret_i32
-      (local.get $1)
+  (if
+   (i32.eqz
+    (local.tee $6
+     (select
+      (local.tee $6
+       (i32.trunc_f32_s
+        (f32.add
+         (f32.reinterpret_i32
+          (local.get $1)
+         )
+         (f32.const -0)
+        )
+       )
+      )
+      (local.tee $3
+       (i32.trunc_f32_s
+        (f32.sub
+         (f32.reinterpret_i32
+          (local.get $4)
+         )
+         (f32.reinterpret_i32
+          (local.get $3)
+         )
+        )
+       )
+      )
+      (i32.gt_s
+       (local.get $3)
+       (local.get $6)
+      )
      )
-     (f32.const -0)
     )
+   )
+   (return
+    (local.get $0)
    )
   )
   (local.set $3
-   (i32.trunc_f32_s
-    (f32.sub
+   (i32.const 0)
+  )
+  (if
+   (i32.lt_s
+    (i32.load
+     (local.get $7)
+    )
+    (i32.trunc_f32_s
      (f32.reinterpret_i32
-      (local.get $4)
-     )
-     (f32.reinterpret_i32
-      (local.get $3)
+      (local.get $1)
      )
     )
+   )
+   (call $error
+    (i32.const 11)
    )
   )
   (if
@@ -484,21 +516,6 @@
     )
     (i32.trunc_f32_s
      (f32.reinterpret_i32
-      (local.get $1)
-     )
-    )
-   )
-   (call $error
-    (i32.const 11)
-   )
-  )
-  (if
-   (i32.lt_s
-    (i32.load
-     (local.get $9)
-    )
-    (i32.trunc_f32_s
-     (f32.reinterpret_i32
       (local.get $4)
      )
     )
@@ -507,24 +524,57 @@
     (i32.const 11)
    )
   )
-  (local.set $1
-   (select
-    (local.get $6)
-    (local.get $3)
-    (i32.gt_s
-     (local.get $3)
-     (local.get $6)
-    )
-   )
-  )
   (loop $loopAdd
    (if
-    (i32.ge_s
-     (local.get $1)
-     (local.tee $7
-      (i32.add
-       (local.get $7)
-       (i32.const 4)
+    (i32.gt_s
+     (i32.add
+      (local.get $3)
+      (i32.const 4)
+     )
+     (local.get $6)
+    )
+    (loop $innerLoop
+     (if
+      (i32.lt_s
+       (local.get $3)
+       (local.get $6)
+      )
+      (block
+       (i32.store
+        (local.get $5)
+        (i32.and
+         (i32.reinterpret_f32
+          (f32.add
+           (f32.load
+            (local.get $5)
+           )
+           (f32.load
+            (local.get $2)
+           )
+          )
+         )
+         (i32.const -2)
+        )
+       )
+       (local.set $5
+        (i32.add
+         (local.get $5)
+         (i32.const 4)
+        )
+       )
+       (local.set $2
+        (i32.add
+         (local.get $2)
+         (i32.const 4)
+        )
+       )
+       (local.set $3
+        (i32.add
+         (local.get $3)
+         (i32.const 1)
+        )
+       )
+       (br $innerLoop)
       )
      )
     )
@@ -559,6 +609,12 @@
       (i32.add
        (local.get $2)
        (i32.const 16)
+      )
+     )
+     (local.set $3
+      (i32.add
+       (local.get $3)
+       (i32.const 4)
       )
      )
      (br $loopAdd)

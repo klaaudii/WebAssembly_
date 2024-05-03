@@ -1,1 +1,0 @@
-"C:\Program Files\Google\Chrome\Application\chrome.exe" --js-flags="--no-lazy --no-opt --no-jit"  --allow-file-access-from-files --new-window  %cd%\schemeLikeL.html

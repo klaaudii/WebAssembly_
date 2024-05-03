@@ -1,6 +1,6 @@
 grammar SchemeLikeL;
 
-start: (sExpr | literal | identifier | defineGlobalVar | defineFnc | exportExpr)+ EOF;
+start: (sExpr | literal | identifier | defineGlobalVar | defineFnc | exportExpr )+ EOF;
 
 sExpr: (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr |
         ifExpr | vectorExpr | listExpr | setExpr | displayExpr);
@@ -16,7 +16,7 @@ defineGlobalVar: SPACE? PSTART SPACE? 'define' SPACE identifier sExpr SPACE? PEN
 defineFnc: SPACE? PSTART SPACE? 'define' SPACE?
         ((PSTART SPACE? identifier (SPACE identifier)* SPACE? PEND (fncBodyExpr | localFncBodyExpr) PEND) |
         (identifier SPACE? PSTART SPACE? 'lambda' SPACE? PSTART SPACE? identifier? (SPACE identifier)* SPACE? PEND
-        SPACE? fncBodyExpr PEND PEND));
+        SPACE? fncBodyExpr PEND PEND)) SPACE?;
 
 fncBodyExpr: SPACE? sExpr* SPACE?;
 
