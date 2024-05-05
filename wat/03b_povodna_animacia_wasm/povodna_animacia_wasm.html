@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initialscale=1.0">
+    <title>Animation in Wasm</title>
+</head>
+<body >
+<h3>Pôvodná implementácia vo Wasm</h3>
+<canvas id="cnvs" width="512" height="512"></canvas>
+<br>
+    <span id="frameRate"></span>
+    <script>
+        const cnvs_size = 512;
+        const bg_color = 0xff_ff_00_00;
+        const object_color = 0xff_00_00_ff;
+        const pixel_count = cnvs_size * cnvs_size;
+        const object_count = 6000;
+        const object_size = 3;
+        const object_base_8 = pixel_count*4;
+        const object_stride_8 = 16;
+        const x_offset = 0;
+        const y_offset = 4;
+        const vx_offset = 8;
+        const vy_offset = 12;
+        const canvas = document.getElementById("cnvs");
+        const frameRate = document.getElementById("frameRate");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, cnvs_size, cnvs_size);
+
+        const memory = new WebAssembly.Memory({initial:100});
+        const mem_i32 = new Uint32Array(memory.buffer);
+
+        const object_base_32 = object_base_8/4;
+        const object_stride_32 = object_stride_8/4;
+
+        const start = (object_base_8 + object_count * object_stride_8)/4
+        const end = start + pixel_count
+
+        const importObject = {
+            env: {
+                buffer: memory,
+                cnvs_size: cnvs_size,
+                object_size: 3,
+                object_count: object_count,
+                objects_base: object_base_8,
+                x_offset: x_offset,
+                y_offset: y_offset,
+                vx_offset: vx_offset,
+                vy_offset: vy_offset,
+                start_bg_mem: start * 4,
+                object_color: object_color,
+            }
+        };
+
+        for (let i = start; i < end; i ++ ){
+            mem_i32[i] = bg_color;
+        }
+
+        const image_data = new ImageData( new Uint8ClampedArray(memory.buffer, 0, pixel_count*4), cnvs_size, cnvs_size );
+
+        for (let i = 0; i < object_count * object_stride_32; i += object_stride_32) {
+            mem_i32[object_base_32 + i] = Math.floor(Math.random() * (cnvs_size - object_size) + object_size); //x
+            mem_i32[object_base_32 + i + 1] = Math.floor(Math.random() * (cnvs_size - 2 * object_size) + object_size); //y
+            tmp = (Math.round(Math.random() * 2) - 1);
+            mem_i32[object_base_32 + i + 2] = tmp === 0 ? 1 : tmp  //vx
+            tmp = (Math.round(Math.random() * 2) - 1);
+            mem_i32[object_base_32 + i + 3] = tmp === 0 ? 1 : tmp; //vy
+        }
+
+        let animation_wasm;
+
+        function animate() {
+
+            animation_wasm();
+            ctx.putImageData(image_data, 0, 0);
+
+            let t = performance.now();
+            let dt = t - startTime;
+            if (dt >= 1000) {
+                let fps = frames * 1000 / dt;
+                frameRate.innerHTML = "fps: " + fps.toString();
+                frames = 0;
+                startTime = t;
+            }
+            frames++;
+
+
+            requestAnimationFrame(animate);
+
+        }
+
+        let startTime;
+        let frames = 0;
+
+        (async () => {
+            let obj = await WebAssembly.instantiateStreaming( fetch('povodna_animacia.wasm'), importObject);
+            animation_wasm = obj.instance.exports.main;
+            startTime = performance.now();
+            requestAnimationFrame(animate);
+        })();
+    </script>
+</body>
+</html>

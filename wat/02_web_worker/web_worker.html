@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>02 Web Worker</title>
+</head>
+<body>
+<button onclick="calculateFib()">Calculate Fib</button>
+<button onclick="log()">Click me</button>
+
+<p id="fibResult">Fib result: </p>
+<script>
+
+    let worker;
+    if (window && window.Worker){
+        worker = new Worker('web_worker.js');
+        worker.postMessage({type: "loadWasm"});
+        worker.onmessage = function(message){
+            if (message.data.type === "fibResult"){
+                document.getElementById("fibResult").innerHTML += message.data.result;
+                console.log(message.data.result)
+            }
+        }
+
+    } else {
+        console.log("Workers are not supported")
+    }
+
+    function calculateFib() {
+        worker.postMessage({type: "fib", a: 45})
+    }
+
+    function log() {
+        let p = document.createElement("p")
+        p.innerHTML = "click"
+        document.body.appendChild(p)
+    }
+
+</script>
+
+</body>
+</html>

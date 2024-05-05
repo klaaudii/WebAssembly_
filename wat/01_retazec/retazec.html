@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport">
+    <title>01 Retazec</title>
+
+</head>
+<body>
+<h3 id="wasmRetazec"></h3>
+<script>
+
+    const memory = new WebAssembly.Memory({initial: 1 });
+    const mem_i32 = new Uint32Array(memory.buffer);
+    const importObject = {
+        env: {
+            memory:memory
+        }
+    }
+
+    WebAssembly.instantiateStreaming(
+        fetch('retazec.wasm'), importObject)
+        .then( (module) => {
+            console.log("Wasm instantiated");
+            let base = module.instance.exports.getStringBase() / 4
+            let wasmString = "";
+            for (let i = 1; i <= mem_i32[base]; i++) {
+                wasmString += String.fromCharCode(mem_i32[base+i]);
+            }
+            document.getElementById("wasmRetazec").innerHTML = wasmString;
+        });
+
+
+</script>
+</body>
+</html>

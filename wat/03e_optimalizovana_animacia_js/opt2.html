@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport">
+    <title>Optimized Animation in JS</title>
+</head>
+<body>
+<h3>Optimalizovaná implementácia v JS</h3>
+<canvas id="canvas" width="512" height="512"></canvas>
+<br>
+<span id="frameRate"></span>
+<script>
+
+    const canvas = document.getElementById("canvas");
+    const frameRate = document.getElementById("frameRate");
+    const ctx = canvas.getContext("2d");
+
+    const cnvs_size = 512;
+    ctx.canvas.width = cnvs_size;
+    ctx.canvas.height = cnvs_size;
+    const pixel_count = cnvs_size * cnvs_size;
+    const cnvs_memory_size_8 = pixel_count * 4;
+    const cnvs_memory_size_32 = pixel_count;
+    const obj_count = 8000;
+    const obj_memory_size_8 = 16;
+    const obj_memory_size_32 = obj_memory_size_8 / 4;
+    const object_base_32 = cnvs_memory_size_32;
+    const object_radius = 3;
+    const x_offset = 0;
+    const y_offset = 4;
+    const vx_offset = 8;
+    const vy_offset = 12;
+    const object_color = 0xff_00_00_ff
+
+    // const buffer = new ArrayBuffer(cnvs_memory_size_8);
+    // const mem_i32 = new Uint32Array(buffer);
+    //
+    //
+    // const imgData = ctx.createImageData(100, 100);
+    // console.log(new Uint32Array(imgData))
+    //
+    // for (let i = 0; i < imgData.data.length; i += 4) {
+    //     imgData.data[i+0] = 255;
+    //     imgData.data[i+1] = 0;
+    //     imgData.data[i+2] = 0;
+    //     imgData.data[i+3] = 255;
+    // }
+    // ctx.putImageData(imgData, 10, 10);
+
+
+    let xArr = [];
+    let yArr = [];
+    let vxArr = [];
+    let vyArr = [];
+
+    for (let i = 0; i < obj_count; i++) {
+        xArr.push(Math.floor(Math.random() * (cnvs_size - 2 * object_radius) + object_radius)); //x
+        yArr.push(Math.floor(Math.random() * (cnvs_size - 2 * object_radius) + object_radius)); //y
+        tmp = (Math.round(Math.random() * 4) - 2);
+        vxArr.push(tmp === 0 ? 1 : tmp);  //vx
+        tmp = (Math.round(Math.random() * 4) - 2);
+        vyArr.push(tmp === 0 ? 1 : tmp); //vy
+    }
+
+    // const image_data = new ImageData(new Uint8ClampedArray(buffer, 0, cnvs_memory_size_8), cnvs_size, cnvs_size);
+
+    function draw_objects() {
+        let x, y;
+        ctx.fillStyle = "red"
+        for (let i = 0; i < obj_count; i++) {
+            x = xArr[i];
+            y = yArr[i];
+            ctx.fillRect(x-1, y-1, object_radius, object_radius)
+            // x = xArr[i];
+            // y = yArr[i];
+            // mem_i32[(y-1)  * cnvs_size + (x-1)] = object_color;
+            // mem_i32[(y-1)  * cnvs_size + (x+1)] = object_color;
+            // mem_i32[(y-1)  * cnvs_size + x] = object_color;
+            // mem_i32[y * cnvs_size + x] = object_color;
+            // mem_i32[y * cnvs_size + (x+1)] = object_color;
+            // mem_i32[y * cnvs_size + (x-1)] = object_color;
+            // mem_i32[(y+1)  * cnvs_size + (x-1)] = object_color;
+            // mem_i32[(y+1)  * cnvs_size + (x+1)] = object_color;
+            // mem_i32[(y+1)  * cnvs_size + x] = object_color;
+        }
+    }
+
+    // function clear_canvas() {
+    //     for (let i = 0; i < cnvs_memory_size_32; i++) {
+    //         mem_i32[i] = 0xff_ff_00_00
+    //     }
+    // }
+
+
+    function move_objects() {
+        for (let i = 0; i < obj_count; i++) {
+            xArr[i] = (xArr[i] + vxArr[i]) & 511;
+            yArr[i] = (yArr[i] + vyArr[i]) & 511;
+        }
+    }
+
+    function find_collisions() {
+        let dx;
+        let dy, dist
+
+        for (let i = 0; i < obj_count; i++) {
+            for (let j = 0; j < obj_count; j++) {
+                if (i === j) break;
+                dx = xArr[j] - xArr[i];
+                dy = yArr[j] - yArr[i];
+                dist = (dx * dx + dy * dy) ** 0.5;
+                if (object_radius > dist) {
+                    vxArr[i] *= -1;
+                    vyArr[i] *= -1;
+                    vxArr[j] *= -1;
+                    vyArr[j] *= -1;
+                    xArr[i] += vxArr[i];
+                    yArr[i] += vyArr[i];
+                    xArr[j] += vxArr[j];
+                    yArr[j] += vyArr[j];
+                }
+            }
+        }
+    }
+
+    function animation_js() {
+
+        ctx.fillStyle = "blue";
+        ctx.fillRect(0,0,cnvs_size, cnvs_size)
+        move_objects();
+        find_collisions();
+        draw_objects();
+        // ctx.putImageData(image_data, 0, 0);
+
+        let t = performance.now();
+        let dt = t - startTime;
+        if (dt >= 1000) {
+            let fps = frames * 1000 / dt;
+            frameRate.innerHTML = "fps: " + fps.toString();
+            frames = 0;
+            startTime = t;
+        }
+        frames++;
+
+        requestAnimationFrame(animation_js);
+    }
+
+    let startTime = performance.now();
+    let frames = 0;
+    requestAnimationFrame(animation_js);
+
+</script>
+</body>
+</html>
