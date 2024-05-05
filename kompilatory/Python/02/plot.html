@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Slope Chart</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+</head>
+<body>
+<h1>Dynamic Slope Chart</h1>
+<div>
+    <label for="categories">Categories:</label>
+    <input type="text" id="categories" value="A, B, C">
+
+    <br>
+    <label for="values1">Values at Point 1:</label>
+    <input type="text" id="values1" value="10, 20, 15">
+    <br>
+    <label for="values2">Values at Point 2:</label>
+    <input type="text" id="values2" value="15, 25, 10">
+    <br>
+    <button id="btn" onclick="generateSlopeChart()" disabled>Generate Slope Chart</button>
+</div>
+<img id="fig" />
+
+<script type="text/javascript">
+    let pyodide;
+    async function main() {
+        pyodide = await loadPyodide();
+        await pyodide.loadPackage(["matplotlib"]);
+        pyodide.runPython(`
+                from js import document
+                import matplotlib.pyplot as plt
+        `);
+        document.getElementById("btn").disabled = false;
+    }
+
+    main()
+    async function generateSlopeChart() {
+        document.body.removeChild(document.body.lastChild)
+        const categories = document.getElementById('categories').value.split(',').map(str => str.trim());
+        const values1 = document.getElementById('values1').value.split(',').map(Number);
+        const values2 = document.getElementById('values2').value.split(',').map(Number);
+
+        pyodide.runPython(`
+                categories = ${JSON.stringify(categories)}
+                values_1 = ${JSON.stringify(values1)}
+                values_2 = ${JSON.stringify(values2)}
+
+                plt.figure(figsize=(7, 5))
+                for i in range(len(categories)):
+                    plt.plot([1, 2], [values_1[i], values_2[i]],
+                    marker='o', linestyle='-', label=categories[i])
+
+                plt.xlabel('Point')
+                plt.ylabel('Value')
+                plt.title('Slope Chart')
+                plt.xticks([1, 2], ['Point 1', 'Point 2'])
+                plt.legend()
+                plt.grid(True)
+        `);
+        pyodide.globals.get('plt').show()
+    }
+</script>
+</body>
+</html>

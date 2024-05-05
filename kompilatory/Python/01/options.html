@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <script>
+        async function main() {
+            let pyodide = await loadPyodide();
+            await fetch('options.py').then(response => response.text()).then(code => pyodide.runPython(code));
+            pyodide.globals.get('hello')();
+            pyodide.globals.set("x", 4)
+            console.log(pyodide.globals.get("add")());
+            pyodide.globals.set("square", x => x * x)
+            console.log(pyodide.globals.get('square')(pyodide.globals.get('x')))
+        }
+        main();
+    </script>
+</head>
+
+<body>
+<p id="title">Pyodide app</p>
+
+
+</body>
+</html>

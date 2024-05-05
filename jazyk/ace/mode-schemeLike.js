@@ -4,7 +4,7 @@ var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 var SchemeLikeHighlightRules = function () {
     var keywordControl = "let*|if|begin";
     var keywordOperator = "and|or|null?|quotient|floor|round|ceiling|truncate|remainder";
-    var supportFunctions = "display|car|cdr|lambda|set!|list|vector-ref|vector-set!|car-set!|cdr-set!|canvas|" +
+    var supportFunctions = "display|car|cdr|lambda|set!|list|vector-ref|vector-set!|set-car!|set-cdr!|canvas|" +
         "fill-rect|fill-circle|color|canvas-onclick|vector|list-ref|fill-text|export|newline|vector-length";
     var keywordMapper = this.createKeywordMapper({
         "keyword.control": keywordControl,

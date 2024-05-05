@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <script type="module">
+import {Asdom} from './node_modules/asdom/glue/index.js'
+import {instantiate} from './node_modules/@assemblyscript/loader/index.js'
+
+
+
+async function main() {
+    const asdom = new Asdom()
+
+    const {exports} = await instantiate(fetch('output.wasm'), {
+        ...asdom.wasmImports,
+        index: {log: (val) => console.log(val)},
+    })
+
+    asdom.wasmExports = exports;
+    exports.createCounter()
+    exports.createDiv()
+
+    let interval = setInterval(() => {
+        exports.moveDiv()
+        }, 1000)
+
+
+    setTimeout( () => {clearInterval(interval)} ,6000*5)
+}
+
+main()
+
+
+</script>
+</head>
+<body>
+
+
+</body>
+</html>

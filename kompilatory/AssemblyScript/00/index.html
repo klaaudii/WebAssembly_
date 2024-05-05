@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport">
+    <title>00</title>
+
+</head>
+<body>
+<script>
+
+    const importObject = {
+        index: {
+            log: (val) => {console.log()},
+        }
+    }
+
+    WebAssembly.instantiateStreaming(
+        fetch('output.wasm'), importObject)
+        .then( (module) => {
+            console.log(module.instance.exports.add(2,6));
+            console.log(module.instance.exports.getHelloString())
+            console.log(new Int8Array(module.instance.exports.memory.buffer))
+            console.log(new Int8Array(module.instance.exports.memory.buffer).slice(28,54).toString())
+        });
+
+</script>
+</body>
+</html>

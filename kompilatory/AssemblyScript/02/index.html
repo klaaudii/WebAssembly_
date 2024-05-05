@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+<canvas id="canvas" width="640" height="444"></canvas>
+<br>
+<button onclick="toOriginal()">ORIGINAL</button>
+<button onclick="gray()">GRAYSCALE</button>
+<button onclick="invert()">INVERSE</button>
+
+<script >
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    let exports;
+    let imageData;
+    let originalData = new Uint8ClampedArray(width*height*4)
+    let data;
+    let uint8;
+    const img = new Image();
+    img.src = './butterfly.jpg';
+    img.onload = () => {
+        ctx.drawImage(img, 0, 0, width, height);
+        imageData = ctx.getImageData(0, 0, width, height);
+        data = imageData.data;
+        const memory = new WebAssembly.Memory({ initial:100 });
+        uint8 = new Uint8ClampedArray(memory.buffer);
+        for (let i = 0; i < data.length; i++) {
+            uint8[i] = data[i];
+            originalData[i] = data[i];
+        }
+
+
+        let importObject = {
+            env: {
+                abort: (error) => console.error(error),
+                memory:memory,
+            }
+        }
+
+        WebAssembly.instantiateStreaming(fetch('output.wasm'), importObject).then( (module) => {
+                exports = module.instance.exports;
+        })
+
+
+    }
+
+    function gray() {
+        exports.gray(width* height*4);
+        for (let i = 0; i < data.length; i++) {
+            data[i] = uint8[i];
+        }
+        console.log(data)
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    function invert() {
+        exports.invert(width* height*4);
+        for (let i = 0; i < data.length; i++) {
+            data[i] = uint8[i];
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    function toOriginal() {
+        console.log(originalData)
+        for (let i = 0; i < data.length; i++) {
+            data[i] = originalData[i];
+            uint8[i] = originalData[i];
+        }
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+</script>
+
+</body>
+</html>

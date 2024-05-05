@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+</head>
+<body>
+<p id="title">Pyodide app</p>
+<script>
+    async function main() {
+        let pyodide = await loadPyodide();
+        console.log(pyodide.runPython(`
+                def factorial(x):
+                    if x == 1:
+                        return 1
+                    else:
+                        return (x * factorial(x-1))
+                factorial(5)
+            `));
+        await fetch('options.py').then(response => response.text()).then(code => pyodide.runPython(code));
+    }
+    main();
+</script>
+</body>
+</html>
