@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport">
+    <title>04 Interakcie</title>
+
+</head>
+<body>
+<h3 id="wasmRetazec"></h3>
+<script>
+
+    let mem = new WebAssembly.Memory({initial: 1 });
+    let i32v = new Int32Array(mem.buffer);
+
+    void async function(){
+
+        let importObject =  {
+            "env": {
+                memory: mem,
+                "fncJs": function(i){
+                    console.log(i32v[10]);
+                    i32v[10] = i;
+                    setTimeout(()=> {document.body.append(document.createTextNode(`after 5 s`));},   5000)
+                }
+            }
+        }
+
+        let instance = (await WebAssembly.instantiateStreaming(fetch('pamat.wasm'), importObject)).instance
+
+        instance.exports.fnc(1);
+        console.log(instance.exports.var)
+        instance.exports.fnc(2);
+        console.log(instance.exports.var)
+
+    }();
+
+</script>
+</body>
+</html>
+
+

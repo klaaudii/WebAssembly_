@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport">
+    <title>04 Interakcie</title>
+
+</head>
+<body>
+<h3 id="wasmRetazec"></h3>
+<script>
+
+    void async function(){
+
+        let importObject =  {
+            "env": {
+                "asyncJs": async function(){
+                    await new Promise(resolve => window.setTimeout(resolve, 2000));
+                    document.body.append(document.createTextNode(`Awaited timeout.`));
+                    return 1;
+                },
+                "callbackInsideJs": function(){
+                    setTimeout(()=> {document.body.append(document.createTextNode(`after 5 s`));},   5000)
+                    // for (let i = 0; i < 100000; i++) {
+                    //     console.log(i)
+                    // }
+                }
+            }
+        }
+
+        let instance = (await WebAssembly.instantiateStreaming(fetch('interactions.wasm'), importObject)).instance
+
+        const start = Date.now();
+        const result = await instance.exports.fnc();
+        console.log(`Result: ${result}, duration: ${Date.now() - start}ms.`);
+
+
+        console.log(instance.exports.fnc2())
+
+    }();
+
+</script>
+</body>
+</html>
+
+
