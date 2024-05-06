@@ -486,7 +486,7 @@ export function initEditor() {
     editor.setFontSize(16)
 }
 
-export function compileToWasm(){
+export function compileToWasm(option){
     document.getElementById("output").innerHTML = "";
     document.getElementById("canvas-container").replaceChildren();
     // wasmModule = new binaryen.Module();
@@ -537,18 +537,15 @@ export function compileToWasm(){
 
     const wasmText = wasmModule.emitText();
     // console.log(wasmText);
-
-    try {
-        wasmModule.optimize();
-    } catch (e) {
-        if (e.message.includes("values.size() > 0")) {
-            throwError(ErrorType.InvalidArgument);
+    if (!option) {
+        try {
+            wasmModule.optimize();
+        } catch (e) {
+            if (e.message.includes("values.size() > 0")) {
+                throwError(ErrorType.InvalidArgument);
+            }
         }
     }
-
-    // if (!wasmModule.validate()) {
-    //     console.error("Module validation error:", wasmModule.validate());
-    // }
 
     const wasmTextOptimized = wasmModule.emitText();
     console.log("optimized Wat")
@@ -559,18 +556,13 @@ export function compileToWasm(){
     return {binary: binary, text: wasmTextOptimized};
 }
 
-
+let reservedWords = ["display", "car", "cdr", "lambda", "set!", "list", "vector-ref", "vector-set!", "set-car!",
+    "set-cdr!", "canvas", "fill-rect", "fill-circle", "color", "canvas-onclick", "vector", "list-ref", "fill-text",
+    "export", "newline", "vector-length", "let*", "if", "begin", "and", "or", "null?", "quotient", "floor", "round",
+    "ceiling", "truncate", "remainder"];
 let exports;
 
-export async function downloadWasm(option) {
-    console.log(option)
-    let wasmData;
-    try {
-        wasmData = compileToWasm()
-    } catch (e) {
-        document.getElementById("output").innerHTML = e.message;
-        throw e;
-    }
+export async function downloadWasm(option, wasmData) {
 
     if (option === 1) {
         const zip = new JSZip();
@@ -608,10 +600,10 @@ export async function downloadWasm(option) {
 
 
 
-export function runWasm(wasmBinary) {
+export function runWasm(wasm) {
     document.getElementById("output").innerHTML = "";
     document.getElementById("canvas-container").replaceChildren();
-    const wasmBytes = new Uint8Array(wasmBinary);
+    const wasmBytes = new Uint8Array(wasm.binary);
 
     const importObject = {
         env: {
@@ -1758,6 +1750,10 @@ function generateIdentifierValue(node, ctxVars){
 
 function generateDefineFuncExpr(node, ctxVars) {
 
+    if (reservedWords.includes(node.identifier.value)) {
+        throw new SchemeError( node.identifier.value +   " is reserved word")
+    }
+
     if (wasmModule.getFunction(node.identifier.value)) {
         throw new SchemeError("The function " + node.identifier.value + " already exists")
     }
@@ -1840,6 +1836,9 @@ function generateLocalFncBodyExpr(node, ctxVars){
     }
     for (let i = 0; i < node.vars.length; i++) {
         expressions.push(wasmModule.local.set(paramsLength + i, generateExpr(node.vars[i].value, ctxVars)));
+        if (reservedWords.includes(node.vars[i].identifier.value)) {
+            throw new SchemeError(node.vars[i].identifier.value+ " is reserved word")
+        }
         ctxVars.push(node.vars[i].identifier.value);
     }
     expressions.push(generateExpr(node.fncBody, ctxVars));
@@ -1916,6 +1915,9 @@ function generateCallLambdaFuncExpr(node, ctxVars) {
 }
 
 function generateDefineGlobalVarExpr(node, ctxVars) {
+    if (reservedWords.includes(node.identifier.value)) {
+        throw new Error(node.identifier.value + " is reserved word");
+    }
     if (!wasmModule.getGlobal(node.identifier.value)) {
         wasmModule.addGlobal(node.identifier.value, binaryen.i32,
             true, wasmModule.i32.const(0));

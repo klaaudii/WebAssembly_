@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <meta charset="UTF-8">
-<title>SchemeLike Editor</title>
+<title>Lory Editor</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="./ace/ace.js"></script>
 <script src="./ace/ext-language_tools.js"></script>
@@ -247,10 +247,10 @@
     (fill-circle board (+ 50 (* x 100)) (+ 50 (* y 100)) token-radius col))
 
 (define (draw-token-row i j)
-    (if (<= j 7) (begin (draw-token j i bg) (draw-token-row i (+ j 1))) (begin)))
+    (if (< j 7) (begin (draw-token j i bg) (draw-token-row i (+ j 1))) (begin)))
 
 (define (draw-token-spaces i)
-    (if (<= i 6) (begin (draw-token-row i 0) (draw-token-spaces (+ i 1))) (begin)))
+    (if (< i 6) (begin (draw-token-row i 0) (draw-token-spaces (+ i 1))) (begin)))
 
 (define (draw-board)
    (fill-rect board 0 0 700 600 blue)
@@ -334,7 +334,9 @@
                 <option value="3">Wat</option>
             </select>
         </div>
-        <button id="compile-button" onclick="compile()">Compile</button>
+
+        <button id="compile-button" onclick="compile(1)">Compile</button>
+        <button id="compile-button" onclick="compile(0)">Optimize & Compile</button>
         <button id="run-button" onclick="run()">Run</button>
     </div>
 
@@ -439,33 +441,36 @@
 
 
     import {compileToWasm, runWasm, initEditor, downloadWasm} from './main.js';
-    let wasmBinary;
+    let wasm;
     window.compile = compile
     window.run = run
     window.getWasm = getWasm
     window.onerror = (e) => {document.getElementById("output").innerHTML = e.toString();}
     initEditor()
 
-    function compile(){
+    function compile(option){
         try {
-            let wasm = compileToWasm()
-            wasmBinary = wasm.binary;
+            wasm = compileToWasm(option)
             document.getElementById("output").innerHTML = "Successfully compiled"
         } catch (e) {
-            wasmBinary == undefined
+            wasm = undefined
             document.getElementById("output").innerHTML = e.message;
             throw e;
         }
     }
 
     function getWasm(option) {
-        downloadWasm(option);
+        if (wasm != undefined) {
+            downloadWasm(option, wasm);
+        } else {
+            document.getElementById("output").innerHTML = "First compile program";
+        }
     }
 
     async function run(){
-        if (wasmBinary !== undefined) {
+        if (wasm !== undefined) {
             try {
-                runWasm(wasmBinary);
+                runWasm(wasm);
             } catch(e) {
                 document.getElementById("output").innerHTML = e.message;
             }
