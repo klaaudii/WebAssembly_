@@ -34,7 +34,7 @@ V tomto adresári môžeme nájsť implementáciu kompilátora a prostredia, kto
 
 Dané prostredie a ukážky vytvorené v jazyku Lory sme publikovali a nižšie prikladáme linky.
 
- - [publikované prostredie](https://klaaudii.github.io/WebAssembly_/jazyk/schemeLikeL.html)
+ - [publikované prostredie](https://klaaudii.github.io/WebAssembly_/jazyk/lory_editor.html)
  - [publikovaná hra Connect4](https://klaaudii.github.io/WebAssembly_/jazyk/examples/connect4-web-page/index.html)
  - [publikovaná vektorová animácia](https://klaaudii.github.io/WebAssembly_/jazyk/examples/animation/index.html)
 
