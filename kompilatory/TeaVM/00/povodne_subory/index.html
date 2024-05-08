@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Animation</title>
+    <style>
+        section.container {
+            margin: 3em;
+        }
+    </style>
+    <script type="text/javascript" charset="utf-8" src="wasm/animation.wasm-runtime.js"></script>
+</head>
+<body>
+<canvas id="canvas" width="512" height="512"></canvas>
+<span id="frameRate"></span>
+
+<script>
+
+    const cnvs_size = 512;
+    const object_radius = 3;
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    function drawBall(x, y) {
+        ctx.beginPath();
+        ctx.fillRect(x, y, object_radius, object_radius)
+        ctx.fillStyle = "red";
+        ctx.fill();
+        ctx.closePath();
+    }
+
+    let counter = 0;
+    let lastTime;
+    let tm;
+
+
+    TeaVM.wasm.load("wasm/animation.wasm", {
+        installImports(o, controller) {
+            o.teavm.drawBall = drawBall;
+        },
+    }).then(teavm => {
+        this.instance = teavm.instance;
+        this.instance.exports.initBalls();
+        function animate() {
+            counter++;
+            if (counter >= 100 && counter % 100 === 0) {
+                tm = Date.now();
+                frameRate.innerHTML = (100000.0 / (tm - lastTime)).toString();
+                lastTime = tm;
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // this.instance.exports.moveBalls();
+            // this.instance.exports.solveCollision();
+            // this.instance.exports.drawBalls();
+
+            this.instance.exports.animateJava();
+            requestAnimationFrame(animate);
+
+        }
+        lastTime = Date.now();
+        requestAnimationFrame(animate);
+
+    })
+</script>
+
+</body>
+</html>
