@@ -674,7 +674,19 @@ function addCanvasOnClickListener(address, fncNum) {
     canvas.addEventListener('click', clickHandler);
 }
 
-function canvasFillText(address, vector, x, y, s) {
+function rgbaToHex(r, g, b, a) {
+    var red = r.toString(16).padStart(2, '0');
+    var green = g.toString(16).padStart(2, '0');
+    var blue = b.toString(16).padStart(2, '0');
+    var alpha = a.toString(16).padStart(2, '0');
+    var hexColor = '#' + red + green + blue + alpha;
+
+    return hexColor;
+}
+
+
+
+function canvasFillText(address, vector, x, y, r, g, b, a) {
     let canvas = canvasMap.get(address).canvas;
     let text = "";
     let pointer = vector >> 2;
@@ -686,6 +698,8 @@ function canvasFillText(address, vector, x, y, s) {
     let y_pos = new Float32Array(new Uint32Array([y]).buffer)[0];
     let ctx = canvas.getContext('2d');
     ctx.font = "bold 30px Arial";
+    ctx.fillStyle = rgbaToHex(r,g,b,a)
+
     ctx.fillText(text, x_pos, y_pos);
 }
 
@@ -1461,7 +1475,7 @@ function initCanvas() {
         binaryen.createType([binaryen.i32, binaryen.i32]), binaryen.none);
 
     wasmModule.addFunctionImport("canvas-fill-text-js", "env", "canvasFillText",
-        binaryen.createType([binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32]), binaryen.none);
+        binaryen.createType([binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32]), binaryen.none);
 
 
     wasmModule.addFunction("canvas", binaryen.createType([binaryen.i32, binaryen.i32]), binaryen.i32,
@@ -1500,7 +1514,7 @@ function initCanvas() {
         [binaryen.i32,
             binaryen.i32],
         wasmModule.block("",
-            [       //TODO treba nejaku zmenu? lebo v konecnom dosledku chceme toto cislo mat v pamati do canvasu
+            [
                     wasmModule.i32.or(
                         wasmModule.i32.or(
                             wasmModule.i32.or(
@@ -1649,10 +1663,32 @@ function initCanvas() {
                     [wasmModule.local.get(0, binaryen.i32)], binaryen.none),
             ], binaryen.none))
 
-    wasmModule.addFunction("fill-text", binaryen.createType([binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32 ]), binaryen.none, [],
+    wasmModule.addFunction("fill-text", binaryen.createType([binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32, binaryen.i32]), binaryen.none, [],
     wasmModule.call("canvas-fill-text-js",
         [wasmModule.local.get(0, binaryen.i32), wasmModule.local.get(1, binaryen.i32),
-            wasmModule.local.get(2, binaryen.i32), wasmModule.local.get(3, binaryen.i32)], binaryen.none));
+            wasmModule.local.get(2, binaryen.i32), wasmModule.local.get(3, binaryen.i32),
+            wasmModule.i32.and(
+            wasmModule.local.get(4, binaryen.i32),
+                wasmModule.i32.const(255)
+                ),
+            wasmModule.i32.shr_u(
+            wasmModule.i32.and(
+                wasmModule.local.get(4, binaryen.i32),
+                wasmModule.i32.const(65280)
+            ), wasmModule.i32.const(8)),
+
+            wasmModule.i32.shr_u(
+            wasmModule.i32.and(
+                wasmModule.local.get(4, binaryen.i32),
+                wasmModule.i32.const(16711680)
+            ), wasmModule.i32.const(16)),
+            wasmModule.i32.shr_u(
+            wasmModule.i32.and(
+                wasmModule.local.get(4, binaryen.i32),
+                wasmModule.i32.const(4278190080)
+            ), wasmModule.i32.const(24)),
+        ], binaryen.none));
+
 
 
 }

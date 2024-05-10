@@ -138,7 +138,17 @@
         canvas.addEventListener('click', clickHandler);
     }
 
-    function canvasFillText(address, vector, x, y) {
+    function rgbaToHex(r, g, b, a) {
+        let red = r.toString(16).padStart(2, '0');
+        let green = g.toString(16).padStart(2, '0');
+        let blue = b.toString(16).padStart(2, '0');
+        let alpha = a.toString(16).padStart(2, '0');
+        let hexColor = '#' + red + green + blue + alpha;
+        return hexColor;
+    }
+
+
+    function canvasFillText(address, vector, x, y, r, g, b, a) {
         let canvas = canvasMap.get(address).canvas;
         let text = "";
         let pointer = vector >> 2;
@@ -150,8 +160,11 @@
         let y_pos = new Float32Array(new Uint32Array([y]).buffer)[0];
         let ctx = canvas.getContext('2d');
         ctx.font = "bold 30px Arial";
+        ctx.fillStyle = rgbaToHex(r,g,b,a)
         ctx.fillText(text, x_pos, y_pos);
     }
+
+
 
     function newline() {
         console.log('\n')
