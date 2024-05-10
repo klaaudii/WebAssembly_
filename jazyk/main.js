@@ -99,6 +99,7 @@ class MyVisitor extends SchemeLikeLVisitor {
                 case SchemeLikeLParser.LiteralContext:
                 case SchemeLikeLParser.ExportExprContext:
                 case SchemeLikeLParser.SExprContext:
+                case SchemeLikeLParser.IdentifierContext:
                     body.push(this.visit(ctx.children[i]));
                     break;
                 case TerminalNodeImpl:
@@ -904,9 +905,6 @@ function init() {
     wasmModule.addFunction("set-car!", binaryen.createType([binaryen.i32, binaryen.i32]), binaryen.none, [],
         wasmModule.block("",
             [
-                // emptyListError,
-                // numberOrVectorError,
-
                 wasmModule.if(wasmModule.i32.eq(wasmModule.local.get(0, binaryen.i32), wasmModule.i32.const(-3)),
                     wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedListActualEmpty)], binaryen.none)),
 
@@ -1895,7 +1893,11 @@ function generateCallFuncExpr(node, ctxVars){
     let paramsType = binaryen.createType(type);
     if (wasmModule.getFunction(node.identifier.value) === 0) {
         if (ctxVars === undefined || !ctxVars.includes(node.identifier.value)) {
-            throw new Error("Unbound variable: " + node.identifier.value)
+            if (wasmModule.getGlobal(node.identifier.value) === 0) {
+                throw new Error("Unbound variable: " + node.identifier.value)
+            } else {
+                throw new Error("Invalid application of " + node.identifier.value)
+            }
         }
         let localVariable = wasmModule.local.get(ctxVars.indexOf(node.identifier.value), wasmModule.i32);
         return wasmModule.call_indirect(tableName, localVariable, operands, paramsType, binaryen.i32) //TODO? result type proste neviem zistit dopredu

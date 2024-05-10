@@ -68,7 +68,7 @@ BIOPERATOR: 'quotient' | 'remainder';
 LOGBIOPERATOR: '=' | '<=' | '>=' | '<' | '>';
 UNIOPERATOR: 'floor' | 'round' | 'ceiling' | 'truncate';
 LOGUNIOPERATOR: 'null?';
-VARIABLE: [a-zA-Z][a-zA-Z-!]*[0-9]*;
+VARIABLE: [a-zA-Z][a-zA-Z0-9-!]*;
 PSTART: '(';
 PEND: ')';
 SPACE: [ \t\r\n][ \t\r\n]*;

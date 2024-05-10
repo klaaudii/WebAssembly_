@@ -1,6 +1,6 @@
 // Generated from SchemeLikeL.g4 by ANTLR 4.13.1
 // jshint ignore: start
-import antlr4 from './antlr4/index.web.js';
+import antlr4 from './antlr4/index.web.js';;
 
 // This class defines a complete listener for a parse tree produced by SchemeLikeLParser.
 export default class SchemeLikeLListener extends antlr4.tree.ParseTreeListener {
@@ -273,7 +273,6 @@ export default class SchemeLikeLListener extends antlr4.tree.ParseTreeListener {
 	// Exit a parse tree produced by SchemeLikeLParser#identifier.
 	exitIdentifier(ctx) {
 	}
-
 
 
 
