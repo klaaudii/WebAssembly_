@@ -925,6 +925,46 @@ function init() {
             ], binaryen.auto));
 
 
+
+
+    wasmModule.addFunction("set-cdr!", binaryen.createType([binaryen.i32, binaryen.i32]), binaryen.none, [],
+        wasmModule.block("",
+            [
+                wasmModule.if(wasmModule.i32.eq(wasmModule.local.get(0, binaryen.i32), wasmModule.i32.const(-3)),
+                    wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedListActualEmpty)], binaryen.none)),
+
+                wasmModule.if(wasmModule.i32.ne(
+                        wasmModule.i32.and(wasmModule.local.get(0, binaryen.i32), wasmModule.i32.const(3)),
+                        wasmModule.i32.const(1)),
+                    wasmModule.if(wasmModule.i32.eq(
+                            wasmModule.i32.and(wasmModule.local.get(0, binaryen.i32), wasmModule.i32.const(3)),
+                            wasmModule.i32.const(3)),
+                        wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedListActualVector)], binaryen.none),
+                        wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedListActualNumber)], binaryen.none))),
+
+
+                wasmModule.if(wasmModule.i32.ne(
+                        wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(3)),
+                        wasmModule.i32.const(1)),
+                    wasmModule.if(wasmModule.i32.eq(
+                            wasmModule.i32.and(wasmModule.local.get(1, binaryen.i32), wasmModule.i32.const(3)),
+                            wasmModule.i32.const(3)),
+                        wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedListActualVector)], binaryen.none),
+                        wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedListActualNumber)], binaryen.none))),
+
+                wasmModule.i32.store(4,0,
+                    wasmModule.i32.shr_u(
+                        wasmModule.local.get(0, binaryen.i32),
+                        wasmModule.i32.const(2)),
+
+                    wasmModule.i32.shr_s(
+                        wasmModule.local.get(1, binaryen.i32),
+                        wasmModule.i32.const(2))
+                ),
+
+            ], binaryen.auto));
+
+
     let vectorEmptyError = wasmModule.if(wasmModule.i32.eq(wasmModule.local.get(0, binaryen.i32), wasmModule.i32.const(-1)),
             wasmModule.call("error", [wasmModule.i32.const(ErrorType.ExpectedVectorActualEmpty)], binaryen.none));
 
