@@ -100,6 +100,7 @@ class MyVisitor extends SchemeLikeLVisitor {
                 case SchemeLikeLParser.ExportExprContext:
                 case SchemeLikeLParser.SExprContext:
                 case SchemeLikeLParser.IdentifierContext:
+                case SchemeLikeLParser.WhileExprContext:
                     body.push(this.visit(ctx.children[i]));
                     break;
                 case TerminalNodeImpl:
@@ -111,6 +112,21 @@ class MyVisitor extends SchemeLikeLVisitor {
         console.log("created AST: ")
         console.log(new AST.ProgramNode(body));
         return new AST.ProgramNode(body);
+    }
+
+    visitWhileExpr(ctx) {
+        let condition;
+        let body = [];
+        for (let i = 0; i < ctx.children.length; i++) {
+            let child = ctx.children[i];
+            if (child.constructor !== TerminalNodeImpl) {
+                if (condition === undefined) condition = this.visit(child);
+                else body.push(this.visit(child));
+            }
+        }
+
+        console.log(new AST.WhileNode(condition, body))
+        return new AST.WhileNode(condition, body)
     }
 
     visitLiteral(ctx) {
@@ -475,6 +491,7 @@ let memoryBase;
 let freeMemIndex;
 let editor;
 let exportedFunctions;
+let whileIndex;
 
 export function initEditor() {
      editor = ace.edit("editor", {
@@ -512,6 +529,7 @@ export function compileToWasm(option){
     wasmModule.addMemoryImport(memoryName, "env", "memory")
     memoryBase = wasmModule.i32.const(0);
     freeMemIndex = 0;
+    whileIndex = 0;
     exportedFunctions = [];
     memory = new WebAssembly.Memory({initial:100, maximum: 65536});
     mem_f32 = new Float32Array(memory.buffer);
@@ -1803,6 +1821,8 @@ function generateExpr(node, ctxVars) {
             return generateVectorExpr(node, ctxVars);
         case AST.ExportNode:
             return generateExportExpr(node, ctxVars);
+        case AST.WhileNode:
+            return generateWhileExpr(node, ctxVars);
         default:
             throw new Error('Unsupported node type');
     }
@@ -1924,6 +1944,17 @@ function generateFncBodyExpr(node, ctxVars){
     let expressions = generateSequenceExpr(node.body, ctxVars);
     return wasmModule.block("", expressions, binaryen.auto);
 }
+
+function generateWhileExpr(node, ctxVars) {
+    let loopName = "while"+whileIndex;
+    whileIndex++;
+    let body = generateSequenceExpr(node.body, ctxVars);
+    body.push(wasmModule.br(loopName));
+    return wasmModule.loop(loopName, wasmModule.if(generateExpr(node.condition, ctxVars),
+        wasmModule.block("", body, binaryen.auto )));
+}
+
+
 
 function generateSetExpr(node, ctxVars) {
     let value = generateExpr(node.pair.value, ctxVars);

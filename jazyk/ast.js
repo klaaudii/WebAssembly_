@@ -12,6 +12,14 @@ export class ProgramNode extends ASTNode {
 }
 
 
+export class WhileNode extends ASTNode {
+    constructor(condition, body) {
+        super();
+        this.condition =  condition;
+        this.body = body;
+    }
+}
+
 export class ListNode extends ASTNode {
     constructor(values) {
         super();

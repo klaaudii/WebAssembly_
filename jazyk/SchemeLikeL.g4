@@ -3,7 +3,7 @@ grammar SchemeLikeL;
 start: (sExpr | literal | identifier | defineGlobalVar | defineFnc | exportExpr )+ EOF;
 
 sExpr: (biExpr | expr | (SPACE literal) | (SPACE identifier) | callFnc | uniExpr | beginExpr |
-        ifExpr | vectorExpr | listExpr | setExpr | displayExpr);
+        ifExpr | vectorExpr | listExpr | setExpr | displayExpr | whileExpr);
 
 expr: SPACE? PSTART SPACE? operatorExpr sExpr+ SPACE? PEND SPACE?;
 
@@ -57,6 +57,8 @@ listExpr: SPACE? PSTART SPACE? 'list' sExpr* SPACE? PEND SPACE? ;
 
 displayExpr: SPACE? PSTART SPACE? 'display' sExpr SPACE? PEND SPACE? ;
 exportExpr: SPACE? PSTART SPACE? 'export' SPACE identifier SPACE? PEND SPACE?;
+
+whileExpr: SPACE? PSTART SPACE? 'while' (sExpr | logExpr | logBiExpr | logUniExpr) sExpr* SPACE? PEND SPACE?;
 
 
 literal: FLOAT | INT | NFLOAT | NINT;

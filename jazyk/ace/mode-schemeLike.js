@@ -2,7 +2,7 @@ define("ace/mode/schemeLike_highlight_rules",["require","exports","module","ace/
 var oop = require("../lib/oop");
 var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 var SchemeLikeHighlightRules = function () {
-    var keywordControl = "let*|if|begin";
+    var keywordControl = "let*|if|begin|while";
     var keywordOperator = "and|or|null?|quotient|floor|round|ceiling|truncate|remainder";
     var supportFunctions = "display|car|cdr|lambda|set!|list|vector-ref|vector-set!|set-car!|set-cdr!|canvas|" +
         "fill-rect|fill-circle|color|canvas-onclick|vector|list-ref|fill-text|export|newline|vector-length";
